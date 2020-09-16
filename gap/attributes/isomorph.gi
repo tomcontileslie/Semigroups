@@ -332,7 +332,7 @@ InstallMethod(IsomorphismSemigroup,
 "for IsStrongSemilatticeOfSemigroups and a Clifford semigroup",
 [IsStrongSemilatticeOfSemigroups, IsSemigroup and IsFinite],
 function(filt, S)
-  local A, idemps, n, D, N, L, idemp, H, map, i, j;
+  local A, idemps, n, D, N, L, classes, idemp, DC, H, map, SSS, i, j;
   # decomposes a finite Clifford semigroup S into a strong semilattice of
   # groups and returns an SSS object.
   if not (IsCliffordSemigroup(S) and IsFinite(S)) then
@@ -350,11 +350,15 @@ function(filt, S)
   D := DigraphReverse(D);
   N := OutNeighbours(D);
 
-  # populate list of semigroups in semilattice
-  L := [];
+  # populate list of semigroups in semilattice.
+  # keep a list of D-classes at the same time, to figure out where elements are
+  L       := [];
+  classes := [];
   for i in [1 .. n] do
     idemp := idemps[i];  # the idempotent of this D-class
-    Add(L, Semigroup(DClass(S, idemp)));
+    DC := DClass(S, idemp);
+    Add(L, Semigroup(DC));
+    Add(classes, DC);
   od;
 
   # populate list of homomorphisms
@@ -370,6 +374,13 @@ function(filt, S)
     od;
   od;
 
-  return StrongSemilatticeOfSemigroups(D, L, H);
-  # TODO make this output the isom rather than the range
+  SSS := StrongSemilatticeOfSemigroups(D, L, H);
+
+  return MagmaIsomorphismByFunctionsNC(S,
+                                       SSS,
+                                       x -> SSSE(SSS,
+                                                 Position(classes,
+                                                          DClass(S, x)), 
+                                                 x),
+                                       x -> x![3]);
 end);
