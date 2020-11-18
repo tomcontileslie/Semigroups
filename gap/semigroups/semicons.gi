@@ -1015,17 +1015,3 @@ InstallMethod(StrongSemilatticeOfSemigroups, "for a SSSE rep",
 function(x)
   return x![1];
 end);
-
-# TODO hash function currently unused
-
-# InstallMethod(ChooseHashFunction, "for SSSE and int",
-# [IsSSSERep, IsInt],
-# function(x, data)
-#   local hashes, hashfunc;
-#   hashes := List(SemigroupsOfStrongSemilatticeOfSemigroups(x![1]),
-#                  y -> ChooseHashFunction(Representative(y), data));
-#   hashfunc := function(y, d)
-#     return 17 * y![2] + hashes[y![2]].func(y![3], d);
-#   end;
-#   return rec(func := hashfunc, data := data);
-# end);
