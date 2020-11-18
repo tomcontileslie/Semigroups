@@ -951,48 +951,51 @@ Error, no 1st choice method found for `BrandtSemigroupCons' on 3 arguments
 
 # constructions: strong semilattices of semigroups: trivial argument checks
 gap> D := CompleteDigraph(2);;
-gap> tr := TrivialSemigroup();;
-gap> id := IdentityMapping(tr);;
-gap> StrongSemilatticeOfSemigroups(D, [tr, tr], [[id, id], [id, id]]);
+gap> S1 := TrivialSemigroup();;
+gap> id := IdentityMapping(S1);;
+gap> StrongSemilatticeOfSemigroups(D, [S1, S1], [[id, id], [id, id]]);
 Error, expected a digraph whose reflexive transitive closure is a meet semilat\
 tice digraph as first argument
 gap> D := Digraph([[2], []]);;
-gap> StrongSemilatticeOfSemigroups(D, [tr, 1], [[id], []]);
+gap> StrongSemilatticeOfSemigroups(D, [S1, 1], [[id], []]);
 Error, expected a list of semigroups as second argument
-gap> StrongSemilatticeOfSemigroups(D, [tr, tr, tr], [[id], []]);
+gap> StrongSemilatticeOfSemigroups(D, [S1, S1, S1], [[id], []]);
 Error, the number of vertices of the first argumement D must be equal to the l\
 ength of the second argument semigroups
-gap> StrongSemilatticeOfSemigroups(D, [tr, tr], [[id], [], []]);
+gap> StrongSemilatticeOfSemigroups(D, [S1, S1], [[id], [], []]);
 Error, where D is the first argument, expected a list of length DigraphNrVerti\
 ces(D) as third argument
-gap> StrongSemilatticeOfSemigroups(D, [tr, tr], [1, []]);
+gap> StrongSemilatticeOfSemigroups(D, [S1, S1], [1, []]);
 Error, expected a list of lists as third argument
-gap> StrongSemilatticeOfSemigroups(D, [tr, tr], [[id, id], []]);
+gap> StrongSemilatticeOfSemigroups(D, [S1, S1], [[id, id], []]);
 Error, where D and homomorphisms are the 1st and 3rd arguments respectively, t\
 he length of homomorphisms[i] must be equal to OutNeighbours(D)[i]
-gap> sm := FullTransformationMonoid(2);;
-gap> cf := function(x) return Transformation([2, 1]); end;;
-gap> mp := MappingByFunction(sm, sm, cf);;
-gap> StrongSemilatticeOfSemigroups(D, [sm, sm], [[mp], []]);
+gap> S2 := FullTransformationMonoid(2);;
+gap> m1 := MappingByFunction(S2, S2, function(x)
+>                                      return Transformation([2, 1]);
+>                                    end);;
+gap> StrongSemilatticeOfSemigroups(D, [S2, S2], [[m1], []]);
 Error, expected a list of lists of homomorphisms as third argument. homomorphi\
 sms[1][1] is not a homomorphism
-gap> StrongSemilatticeOfSemigroups(D, [tr, sm], [[id], []]);
+gap> StrongSemilatticeOfSemigroups(D, [S1, S2], [[id], []]);
 Error, expected homomorphism from 2 to 1 to have correct source and range
-gap> StrongSemilatticeOfSemigroups(D, [sm, tr], [[id], []]);
+gap> StrongSemilatticeOfSemigroups(D, [S2, S1], [[id], []]);
 <strong semilattice of 2 semigroups>
-gap> id := IdentityMapping(sm);;
-gap> StrongSemilatticeOfSemigroups(D, [sm, tr], [[id], []]);
+gap> id := IdentityMapping(S2);;
+gap> StrongSemilatticeOfSemigroups(D, [S2, S1], [[id], []]);
 <strong semilattice of 2 semigroups>
 
 # constructions: strong semilattices of semigroups: homomorphism checks
 gap> D := Digraph([[2, 3], [4], [4], []]);;
-gap> sm := FullTransformationMonoid(2);;
-gap> id := IdentityMapping(sm);;
-gap> c1 := function(x) return Transformation([1, 1]); end;;
-gap> c2 := function(x) return Transformation([2, 2]); end;;
-gap> m1 := MappingByFunction(sm, sm, c1);;
-gap> m2 := MappingByFunction(sm, sm, c2);;
-gap> L := [sm, sm, sm, sm];;
+gap> S1 := FullTransformationMonoid(2);;
+gap> id := IdentityMapping(S1);;
+gap> m1 := MappingByFunction(S1, S1, function(x)
+>                                      return Transformation([1, 1]);
+>                                    end);;
+gap> m2 := MappingByFunction(S1, S1, function(x)
+>                                      return Transformation([2, 2]);
+>                                    end);;
+gap> L := [S1, S1, S1, S1];;
 gap> H := [[m1, m2], [id], [id], []];;
 gap> StrongSemilatticeOfSemigroups(D, L, H);
 Error, Composing homomorphisms along different paths from 1 to 
@@ -1004,51 +1007,48 @@ Error, Expected homomorphism from 4 to 4 to be the identity
 
 # constructions: strong semilattices of semigroups: valid example
 gap> D := Digraph([[2, 3], [2], []]);;
-gap> sm := FullTransformationMonoid(2);;
-gap> id := IdentityMapping(sm);;
-gap> c1 := function(x) return Transformation([1, 1]); end;;
-gap> c2 := function(x) return Transformation([2, 2]); end;;
-gap> m1 := MappingByFunction(sm, sm, c1);;
-gap> m2 := MappingByFunction(sm, sm, c2);;
-gap> L := [sm, sm, sm];;
+gap> S1 := FullTransformationMonoid(2);;
+gap> id := IdentityMapping(S1);;
+gap> m1 := MappingByFunction(S1, S1, function(x)
+>                                      return Transformation([1, 1]);
+>                                    end);;
+gap> m2 := MappingByFunction(S1, S1, function(x)
+>                                      return Transformation([2, 2]);
+>                                    end);;
+gap> L := [S1, S1, S1];;
 gap> H := [[m1, m2], [id], []];;
-gap> SSS := StrongSemilatticeOfSemigroups(D, L, H);
+gap> StrongSemilatticeOfSemigroups(D, L, H);
 <strong semilattice of 3 semigroups>
-gap> Size(SSS);
+gap> Size(last);
 12
 
 # constructions: strong semilattices of semigroups: SSSEs
 gap> D := Digraph([[2, 3], [2], []]);;
-gap> sm := FullTransformationMonoid(2);;
-gap> id := IdentityMapping(sm);;
-gap> c1 := function(x) return Transformation([1, 1]); end;;
-gap> c2 := function(x) return Transformation([2, 2]); end;;
-gap> m1 := MappingByFunction(sm, sm, c1);;
-gap> m2 := MappingByFunction(sm, sm, c2);;
-gap> L := [sm, sm, sm];;
+gap> S1 := FullTransformationMonoid(2);;
+gap> id := IdentityMapping(S1);;
+gap> m1 := MappingByFunction(S1, S1, function(x)
+>                                      return Transformation([1, 1]);
+>                                    end);;
+gap> m2 := MappingByFunction(S1, S1, function(x)
+>                                      return Transformation([2, 2]);
+>                                    end);;
+gap> L := [S1, S1, S1];;
 gap> H := [[m1, m2], [id], []];;
-gap> SSS := StrongSemilatticeOfSemigroups(D, L, H);;
-gap> SSSE(SSS, 10, IdentityTransformation);
+gap> S := StrongSemilatticeOfSemigroups(D, L, H);;
+gap> SSSE(S, 10, IdentityTransformation);
 Error, expected second argument to be an integer between 1 and the size of the\
  semilattice, i.e. 3
-gap> SSSE(SSS, 1, Transformation([3, 2, 1]));
+gap> SSSE(S, 1, Transformation([3, 2, 1]));
 Error, where S, n and x are the 1st, 2nd and 3rd arguments respectively, expec\
 ted x to be an element of SemigroupsOfStrongSemilatticeOfSemigroups(S)[n]
-gap> x := SSSE(SSS, 2, Transformation([2, 1]));
-SSSE(2, Transformation( [ 2, 1 ] ))
-gap> y := SSSE(SSS, 3, Transformation([1, 1]));
-SSSE(3, Transformation( [ 1, 1 ] ))
-gap> z := SSSE(SSS, 1, Transformation([2, 2]));
-SSSE(1, Transformation( [ 2, 2 ] ))
-gap> x < y;
+gap> SSSE(S, 2, Transformation([2, 1])) < SSSE(S, 3, Transformation([1, 1]));
 true
-gap> x = y;
+gap> SSSE(S, 2, Transformation([2, 1])) = SSSE(S, 3, Transformation([1, 1]));
 false
-gap> x * y;
-SSSE(1, Transformation( [ 2, 2 ] ))
-gap> z = x * y;
+gap> SSSE(S, 2, Transformation([2, 1])) * SSSE(S, 3, Transformation([1, 1]))
+>    = SSSE(S, 1, Transformation([2, 2]));
 true
-gap> SSS = StrongSemilatticeOfSemigroups(x);
+gap> S = StrongSemilatticeOfSemigroups( SSSE(S, 2, Transformation([2, 1])));
 true
 
 # constructions: strong semilattices of semigroups: full worked example (SLOW!)
@@ -1061,14 +1061,16 @@ true
 #          \ /
 #           1
 #
-gap> S1 := Semigroup(Transformation([1, 1, 1]),
->                    Transformation([1, 2, 3]),
->                    Transformation([1, 3, 2]));;
-gap> S2 := MagmaWithZeroAdjoined(SymmetricGroup(3));;
-gap> S3 := FullTransformationMonoid(4);;
-gap> S4 := RightZeroSemigroup(4);;
-gap> S5 := FullTransformationMonoid(3);;
-gap> map53f := function(trans)
+gap> L := [];;
+gap> H := [[], [], [], [], []];;
+gap> Add(L, Semigroup(Transformation([1, 1, 1]),
+>                     Transformation([1, 2, 3]),
+>                     Transformation([1, 3, 2])));
+gap> Add(L, MagmaWithZeroAdjoined(SymmetricGroup(3)));
+gap> Add(L, FullTransformationMonoid(4));
+gap> Add(L, RightZeroSemigroup(4));
+gap> Add(L, FullTransformationMonoid(3));
+gap> m1 := function(trans)
 >      local temp, out;
 >      # A clever way of embedding T3 in T4, fixing the point 1 rather than 4.
 >      temp := ShallowCopy(ListTransformation(trans)) + 1;
@@ -1076,118 +1078,86 @@ gap> map53f := function(trans)
 >      Append(out, temp);
 >      return Transformation(out);
 >    end;;
-gap> map53 := MappingByFunction(S5, S3, map53f);;
-gap> cong31  := SemigroupCongruence(S3, [[Transformation([1, 2, 4, 3]),
->                                         Transformation([1, 3, 2, 4])]]);;
+gap> H[3][2] := MappingByFunction(L[5], L[3], m1);;
+gap> c := SemigroupCongruence(L[3], [[Transformation([1, 2, 4, 3]),
+>                                     Transformation([1, 3, 2, 4])]]);;
 gap> # this congruence separates T_4 into three sets:
 gap> # A_4;
 gap> # S_4 \ A_4;
 gap> # all transformations with size of image < 4.
-gap> cong311 := CongruenceClassOfElement(cong31,
->                                        Transformation([1, 2, 3, 1]));;
-gap> cong312 := CongruenceClassOfElement(cong31,
->                                        IdentityTransformation);;
-gap> cong313 := CongruenceClassOfElement(cong31,
->                                        Transformation([2, 3, 4, 1]));;
-gap> map31f := function(trans)
->      if trans in cong311 then
+gap> c1 := CongruenceClassOfElement(c,
+>                                   Transformation([1, 2, 3, 1]));;
+gap> c2 := CongruenceClassOfElement(c,
+>                                   IdentityTransformation);;
+gap> c3 := CongruenceClassOfElement(c,
+>                                   Transformation([2, 3, 4, 1]));;
+gap> m1 := function(trans)
+>      if trans in c1 then
 >        return Transformation([1, 1, 1]);
->      elif trans in cong312 then
+>      elif trans in c2 then
 >        return Transformation([1, 2, 3]);
->      elif trans in cong313 then
+>      elif trans in c3 then
 >        return Transformation([1, 3, 2]);
 >      else
 >        return fail;
 >      fi;
 >    end;;
-gap> map31 := MappingByFunction(S3, S1, map31f);;
-gap> map52f := function(trans)
+gap> H[1][2] := MappingByFunction(L[3], L[1], m1);;
+gap> m1 := function(trans)
 >      if Length(ImageSetOfTransformation(trans, 3)) < 3 then
->        return MultiplicativeZero(S2);
+>        return MultiplicativeZero(L[2]);
 >      else
->        return PermutationOfImage(trans) ^ UnderlyingInjectionZeroMagma(S2);
+>        return PermutationOfImage(trans) ^ UnderlyingInjectionZeroMagma(L[2]);
 >      fi;
 >    end;;
-gap> map52 := MappingByFunction(S5, S2, map52f);;
-gap> map21f := function(magelem)
->      local perm;
->      perm := magelem ^ InverseGeneralMapping(UnderlyingInjectionZeroMagma(S2));
->      if perm = fail then
+gap> H[2][1] := MappingByFunction(L[5], L[2], m1);;
+gap> m1 := function(magelem)
+>      local p;
+>      p := magelem ^ InverseGeneralMapping(UnderlyingInjectionZeroMagma(L[2]));
+>      if p = fail then
 >        return Transformation([1, 1, 1]);
->      elif perm in AlternatingGroup(3) then
+>      elif p in AlternatingGroup(3) then
 >        return Transformation([1, 2, 3]);
 >      else
 >        return Transformation([1, 3, 2]);
 >      fi;
 >    end;;
-gap> map21 := MappingByFunction(S2, S1, map21f);;
-gap> map43 := IdentityMapping(S3);;
+gap> H[1][1] := MappingByFunction(L[2], L[1], m1);;
+gap> H[3][1] := IdentityMapping(L[3]);;
 gap> D := Digraph([[2, 3], [5], [4, 5], [], []]);;
-gap> L := [S1, S2, S3, S4, S5];;
-gap> H := [[map21, map31], [map52], [map43, map53], [], []];;
-gap> sl := StrongSemilatticeOfSemigroups(D, L, H);
+gap> S := StrongSemilatticeOfSemigroups(D, L, H);
 <strong semilattice of 5 semigroups>
-gap> IsStrongSemilatticeOfSemigroups(sl);
+gap> IsStrongSemilatticeOfSemigroups(S);
 true
-gap> Size(sl);
+gap> Size(S);
 297
-gap> Length(GreensDClasses(sl));
+gap> Length(GreensDClasses(S));
 12
-gap> x := SSSE(sl, 2, (1, 2) ^ UnderlyingInjectionZeroMagma(S2));;
-gap> y := SSSE(sl, 3, Transformation([1, 4, 3, 2]));;
-gap> z := SSSE(sl, 1, IdentityTransformation);;
-gap> x * y = z;
+gap> SSSE(S, 2, (1, 2) ^ UnderlyingInjectionZeroMagma(L[2]))
+>    * SSSE(S, 3, Transformation([1, 4, 3, 2]))
+>    = SSSE(S, 1, IdentityTransformation);
 true
-gap> x := SSSE(sl, 4, Transformation([4, 4, 4, 4]));;
-gap> y := SSSE(sl, 5, Transformation([3, 3, 2]));;
-gap> z := SSSE(sl, 3, Transformation([3, 3, 3, 3]));;
-gap> x * y = z;
+gap> SSSE(S, 4, Transformation([4, 4, 4, 4]))
+>    * SSSE(S, 5, Transformation([3, 3, 2]))
+>    = SSSE(S, 3, Transformation([3, 3, 3, 3]));
 true
-gap> MultiplicativeZero(sl);
-SSSE(1, Transformation( [ 1, 1, 1 ] ))
-gap> MultiplicativeNeutralElement(sl);
+gap> MultiplicativeZero(S) = SSSE(S, 1, Transformation([1, 1, 1]));
+true
+gap> MultiplicativeNeutralElement(S);
 fail
 
 #
 gap> Unbind(S);
 
 # Unbind strong semilattice vars
-# TODO use less global variables
 gap> Unbind(D);
 gap> Unbind(L);
 gap> Unbind(H);
-gap> Unbind(SSS);
-gap> Unbind(tr);
 gap> Unbind(id);
-gap> Unbind(sm);
-gap> Unbind(cf);
-gap> Unbind(mp);
-gap> Unbind(sl);
-gap> Unbind(c1);
-gap> Unbind(c2);
 gap> Unbind(m1);
 gap> Unbind(m2);
-gap> Unbind(x);
-gap> Unbind(y);
-gap> Unbind(z);
 gap> Unbind(S1);
 gap> Unbind(S2);
-gap> Unbind(S3);
-gap> Unbind(S4);
-gap> Unbind(S5);
-gap> Unbind(map53f);
-gap> Unbind(map53);
-gap> Unbind(map31f);
-gap> Unbind(map31);
-gap> Unbind(map52f);
-gap> Unbind(map52);
-gap> Unbind(map21f);
-gap> Unbind(map21);
-gap> Unbind(map43);
-gap> Unbind(cong31);
-gap> Unbind(cong311);
-gap> Unbind(cong312);
-gap> Unbind(cong313);
 
 # 
 gap> SEMIGROUPS.StopTest();
