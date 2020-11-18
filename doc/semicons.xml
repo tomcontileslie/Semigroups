@@ -302,7 +302,7 @@ true]]></Example>
 
 <#GAPDoc Label="StrongSemilatticeOfSemigroups">
   <ManSection>
-    <Func Name="StrongSemilatticeOfSemigroups" Arg="D, L, H"/>
+    <Oper Name="StrongSemilatticeOfSemigroups" Arg="D, L, H"/>
     <Returns>
       A strong semilattice of semigroups.
     </Returns>
@@ -346,7 +346,7 @@ true]]></Example>
 
 <#GAPDoc Label="IsStrongSemilatticeOfSemigroups">
   <ManSection>
-    <Func Name="IsStrongSemilatticeOfSemigroups" Arg="obj"/>
+    <Filt Name="IsStrongSemilatticeOfSemigroups" Arg="obj"/>
     <Returns>
       <K>true</K> or <K>false</K>.
     </Returns>
@@ -365,7 +365,7 @@ true]]></Example>
 
 <#GAPDoc Label="SemilatticeOfStrongSemilatticeOfSemigroups">
   <ManSection>
-    <Func Name="SemilatticeOfStrongSemilatticeOfSemigroups" Arg="SSS"/>
+    <Attr Name="SemilatticeOfStrongSemilatticeOfSemigroups" Arg="SSS"/>
     <Returns>
       A meet-semilattice digraph.
     </Returns>
@@ -381,7 +381,7 @@ true]]></Example>
 
 <#GAPDoc Label="SemigroupsOfStrongSemilatticeOfSemigroups">
   <ManSection>
-    <Func Name="SemigroupsOfStrongSemilatticeOfSemigroups" Arg="SSS"/>
+    <Attr Name="SemigroupsOfStrongSemilatticeOfSemigroups" Arg="SSS"/>
     <Returns>
       A list of semigroups.
     </Returns>
@@ -396,7 +396,7 @@ true]]></Example>
 
 <#GAPDoc Label="HomomorphismsOfStrongSemilatticeOfSemigroups">
   <ManSection>
-    <Func Name="HomomorphismsOfStrongSemilatticeOfSemigroups" Arg="SSS"/>
+    <Attr Name="HomomorphismsOfStrongSemilatticeOfSemigroups" Arg="SSS"/>
     <Returns>
       A list of lists of mappings.
     </Returns>
@@ -412,7 +412,7 @@ true]]></Example>
 
 <#GAPDoc Label="IsSSSE">
   <ManSection>
-    <Func Name="IsSSSE" Arg="obj"/>
+    <Filt Name="IsSSSE" Arg="obj"/>
     <Returns>
       <K>true</K> or <K>false</K>.
     </Returns>
@@ -425,7 +425,7 @@ true]]></Example>
 
 <#GAPDoc Label="SSSE">
   <ManSection>
-    <Func Name="SSSE" Arg="SSS, n, x"/>
+    <Oper Name="SSSE" Arg="SSS, n, x"/>
     <Returns>
       The element of the strong semilattice of semigroups <A>SSS</A> which lies
       in semigroup number <A>n</A> and which corresponds to the element
