@@ -4,18 +4,10 @@ SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
   # Global variable eg STZ_GENS := 1, STZ_RELS := 2?
 
   newRels := List([1 .. Length(rels)], x -> []);
-  for i in [1 .. Length(rels)] do    
-      #if rels[i][1] = subword then
-      #    rel1 := rels[i][1];
-      #else
-          rel1 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][1], subword, newWord);
-      #fi;
-      #if rels[i][2] = subword then
-      #    rel2 := rels[i][2];
-      #else
-          rel2 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][2], subword, newWord);
-      #fi;
-      newRels[i] := [rel1, rel2];
+  for i in [1 .. Length(rels)] do
+    rel1       := SEMIGROUPS.StzReplaceSubwordRel(rels[i][1], subword, newWord);
+    rel2       := SEMIGROUPS.StzReplaceSubwordRel(rels[i][2], subword, newWord);
+    newRels[i] := [rel1, rel2];
   od;
   return newRels;
 end;
@@ -121,44 +113,47 @@ end;
 InstallMethod(StzPresentation, "for a finitely presented semigroup",
 [IsFpSemigroup],
 function(S)
-    local out, rels, type;
+  local out, rels, type;
 
-    type := NewType(NewFamily("StzFamily", IsStzPresentation),
-                    IsStzPresentation and IsComponentObjectRep);
+  type := NewType(NewFamily("StzFamily", IsStzPresentation),
+                  IsStzPresentation and IsComponentObjectRep);
 
-    rels := List(RelationsOfFpSemigroup(S),
-                x -> [LetterRepAssocWord(x[1]), LetterRepAssocWord(x[2])]);
+  rels := List(RelationsOfFpSemigroup(S),
+              x -> [LetterRepAssocWord(x[1]), LetterRepAssocWord(x[2])]);
 
-    out := rec(gens := List(GeneratorsOfSemigroup(S), x -> ViewString(x)),
-                rels := rels,
-                unreducedSemigroup := S,
-                tietzeForwardMap := List([1..Length(GeneratorsOfSemigroup(S))], x -> [x]),
-                tietzeBackwardMap := List([1..Length(GeneratorsOfSemigroup(S))], x -> [x]));
+  out := rec(gens               := List(GeneratorsOfSemigroup(S),
+                                        x -> ViewString(x)),
+             rels               := rels,
+             unreducedSemigroup := S,
+             tietzeForwardMap   := List([1 .. Length(GeneratorsOfSemigroup(S))],
+                                        x -> [x]),
+             tietzeBackwardMap  := List([1 .. Length(GeneratorsOfSemigroup(S))],
+                                        x -> [x]));
 
-    return ObjectifyWithAttributes(out, type,
-                                    RelationsOfStzPresentation,
-                                    out!.rels,
-                                    GeneratorsOfStzPresentation,
-                                    out!.gens,
-                                    UnreducedSemigroupOfStzPresentation,
-                                    out!.unreducedSemigroup,
-                                    TietzeForwardMap,
-                                    out!.tietzeForwardMap,
-                                    TietzeBackwardMap,
-                                    out!.tietzeBackwardMap);
+  return ObjectifyWithAttributes(out, type,
+                                  RelationsOfStzPresentation,
+                                  out!.rels,
+                                  GeneratorsOfStzPresentation,
+                                  out!.gens,
+                                  UnreducedSemigroupOfStzPresentation,
+                                  out!.unreducedSemigroup,
+                                  TietzeForwardMap,
+                                  out!.tietzeForwardMap,
+                                  TietzeBackwardMap,
+                                  out!.tietzeBackwardMap);
 end);
 
-# Add checks cause this can break everything
+# TODO Add checks cause this can break everything
 InstallMethod(SetRelationsOfStzPresentation,
 [IsStzPresentation, IsList],
 function(stz, arg)
-    if not ForAll(arg, IsList) or
-        not ForAll(arg, x -> ForAll(x, IsList)) or
-        not ForAll(arg, x -> ForAll(x, y -> ForAll(y,IsPosInt))) then
-        ErrorNoReturn("parameter <arg> must be a list of relations of the ",
-                    " form letter then exponent,");
-    fi;
-    stz!.rels := arg;
+  if not ForAll(arg, IsList) or
+      not ForAll(arg, x -> ForAll(x, IsList)) or
+      not ForAll(arg, x -> ForAll(x, y -> ForAll(y, IsPosInt))) then
+        ErrorNoReturn("parameter <arg> must be a list of pairs of words in\n",
+                     "LetterRep format,");
+  fi;
+  stz!.rels := arg;
 end);
 
 InstallMethod(RelationsOfStzPresentation,
@@ -201,28 +196,29 @@ end);
 # InstallMethod(LetterRepRelationsOfStzPresentation,
 # [IsStzPresentation],
 # function(stz)
-#     local out, rels, rel, relSide, i, exp, letter, newRels, newRelSide, newRel,w;
-#     rels := RelationsOfStzPresentation(stz);
-#     out := [];
+#   local out, rels, rel, relSide, i, exp, letter, newRels, newRelSide, newRel,
+#         w;
+#   rels := RelationsOfStzPresentation(stz);
+#   out := [];
 
-#     # There's something here, I'm fairly sure
-#     # w := ObjByExtRep(FamilyObj(stz!.gens[1]), stz!.rels);
+#   # There's something here, I'm fairly sure
+#   # w := ObjByExtRep(FamilyObj(stz!.gens[1]), stz!.rels);
 
-#     for rel in [1..Length(rels)] do
-#         newRel :=[];
-#         for relSide in [1,2] do
-#             newRelSide := [];
-#             for i in [1 .. Length(rels[rel][relSide])/2]*2 do
-#                 letter:=rels[rel][relSide][i-1];
-#                 exp:=rels[rel][relSide][i];
-#                 newRelSide:=Concatenation(newRelSide,List([1..exp], x-> letter));
-#             od;
-#             Append(newRel, [newRelSide]);
-#         od;
-#         Append(out, [newRel]);
+#   for rel in [1..Length(rels)] do
+#     newRel :=[];
+#     for relSide in [1,2] do
+#       newRelSide := [];
+#       for i in [1 .. Length(rels[rel][relSide])/2]*2 do
+#         letter:=rels[rel][relSide][i-1];
+#         exp:=rels[rel][relSide][i];
+#         newRelSide:=Concatenation(newRelSide,List([1..exp], x-> letter));
+#       od;
+#       Append(newRel, [newRelSide]);
 #     od;
+#     Append(out, [newRel]);
+#   od;
 
-#     return out;
+#   return out;
 # end);
 
 InstallMethod(SemigroupOfStzPresentation,
@@ -274,12 +270,14 @@ function(stz, newMaps)
     stz!.tietzeBackwardMap := newMaps;
 end);
 
-
 InstallMethod(TietzeForwardMapReplaceSubword,
 [IsStzPresentation, IsList, IsList],
 function(stz, subWord, newSubWord)
     local newMaps;
-    newMaps := List(stz!.tietzeForwardMap, x -> SEMIGROUPS.StzReplaceSubwordRel(x, subWord, newSubWord));
+    newMaps := List(stz!.tietzeForwardMap,
+                    x -> SEMIGROUPS.StzReplaceSubwordRel(x,
+                                                         subWord,
+                                                         newSubWord));
     stz!.tietzeForwardMap := newMaps;
 end);
 
@@ -287,10 +285,12 @@ InstallMethod(TietzeBackwardMapReplaceSubword,
 [IsStzPresentation, IsList, IsList],
 function(stz, subWord, newSubWord)
     local newMaps;
-    newMaps := List(stz!.tietzeBackwardMap, x -> SEMIGROUPS.StzReplaceSubwordRel(x, subWord, newSubWord));
+    newMaps := List(stz!.tietzeBackwardMap,
+                    x -> SEMIGROUPS.StzReplaceSubwordRel(x,
+                                                         subWord,
+                                                         newSubWord));
     stz!.tietzeBackwardMap := newMaps;
 end);
-
 
 InstallMethod(Length,
 [IsStzPresentation],
@@ -531,7 +531,7 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   tempRels := ShallowCopy(RelationsOfStzPresentation(stz));
   Remove(tempRels, index);
   tempRels := SEMIGROUPS.StzReplaceSubword(tempRels, [gen], expr);
-  SetRelationsOfStzPresentation(stz, tempRels);  
+  SetRelationsOfStzPresentation(stz, tempRels);
   Apply(stz!.rels, x -> List(x, y -> List(y, decrement)));
 
   # remove generator.
