@@ -14,9 +14,6 @@
 # DeclareOperation("StzPresentation", [IsList, IsList]);
 DeclareOperation("StzPresentation", [IsFpSemigroup]);
 DeclareCategory("IsStzPresentation", IsList);
-#DeclareRepresentation("IsStzPresentationRep", IsStzPresentation and IsPositionalObjectRep,
-#                        3);
-
 
 # Can add extra representations as attributes?
 # Maybe use 'representation' instead
@@ -43,14 +40,18 @@ DeclareAttribute("UnreducedSemigroupOfStzPresentation", IsStzPresentation);
 # Stores a map between the words of each semigroup (how?)
 # Change as relations change
 # Otherwise must keep track of all tietze transforms i suppose
-DeclareAttribute("MapToUnreducedFpSemigroup", IsStzPresentation);
+DeclareAttribute("TietzeForwardMap", IsStzPresentation);
+DeclareAttribute("TietzeBackwardMap", IsStzPresentation);
 
-DeclareOperation("SetMapToUnreducedFpSemigroup", [IsStzPresentation, IsPosInt, IsList]); # no longer needed?
-DeclareOperation("SetMapToUnreducedFpSemigroup", [IsStzPresentation, IsList]);
+DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsPosInt, IsList]); # no longer needed?
+DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsList]);
+DeclareOperation("SetTietzeBackwardMap", [IsStzPresentation, IsPosInt, IsList]); # no longer needed?
+DeclareOperation("SetTietzeBackwardMap", [IsStzPresentation, IsList]);
 
-DeclareOperation("MapToUnreducedFpSemigroupReplaceSubword", [IsStzPresentation, IsList, IsList]);
+DeclareOperation("TietzeForwardMapReplaceSubword", [IsStzPresentation, IsList, IsList]);
+DeclareOperation("TietzeBackwardMapReplaceSubword", [IsStzPresentation, IsList, IsList]);
 
 # FP semigroup attributes
 DeclareAttribute("UnreducedFpSemigroupOfFpSemigroup", IsFpSemigroup);
-DeclareAttribute("MapToUnreducedFpSemigroup", IsFpSemigroup);
-
+DeclareAttribute("TietzeForwardMap", IsFpSemigroup);
+DeclareAttribute("TietzeBackwardMap", IsFpSemigroup);
