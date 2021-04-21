@@ -4,18 +4,10 @@ SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
   # Global variable eg STZ_GENS := 1, STZ_RELS := 2?
 
   newRels := List([1 .. Length(rels)], x -> []);
-  for i in [1 .. Length(rels)] do    
-      #if rels[i][1] = subword then
-      #    rel1 := rels[i][1];
-      #else
-          rel1 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][1], subword, newWord);
-      #fi;
-      #if rels[i][2] = subword then
-      #    rel2 := rels[i][2];
-      #else
-          rel2 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][2], subword, newWord);
-      #fi;
-      newRels[i] := [rel1, rel2];
+  for i in [1 .. Length(rels)] do
+    rel1 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][1], subword, newWord);
+    rel2 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][2], subword, newWord);
+    newRels[i] := [rel1, rel2];
   od;
   return newRels;
 end;
@@ -130,9 +122,10 @@ function(S)
                 x -> [LetterRepAssocWord(x[1]), LetterRepAssocWord(x[2])]);
 
     out := rec(gens := List(GeneratorsOfSemigroup(S), x -> ViewString(x)),
-                rels := rels,
-                unreducedSemigroup := S,
-                mapToUnreducedFpSemigroup := List([1..Length(GeneratorsOfSemigroup(S))], x -> [x]));
+        rels := rels,
+        unreducedSemigroup := S,
+        mapToUnreducedFpSemigroup := List([1..Length(GeneratorsOfSemigroup(S))],
+                                          x -> [x]));
 
     return ObjectifyWithAttributes(out, type,
                                     RelationsOfStzPresentation,
@@ -188,34 +181,6 @@ function(stz, newGens)
     stz!.gens := newGens;
 end);
 
-# # Storing as attribute kinda breaks it since
-# InstallMethod(LetterRepRelationsOfStzPresentation,
-# [IsStzPresentation],
-# function(stz)
-#     local out, rels, rel, relSide, i, exp, letter, newRels, newRelSide, newRel,w;
-#     rels := RelationsOfStzPresentation(stz);
-#     out := [];
-
-#     # There's something here, I'm fairly sure
-#     # w := ObjByExtRep(FamilyObj(stz!.gens[1]), stz!.rels);
-
-#     for rel in [1..Length(rels)] do
-#         newRel :=[];
-#         for relSide in [1,2] do
-#             newRelSide := [];
-#             for i in [1 .. Length(rels[rel][relSide])/2]*2 do
-#                 letter:=rels[rel][relSide][i-1];
-#                 exp:=rels[rel][relSide][i];
-#                 newRelSide:=Concatenation(newRelSide,List([1..exp], x-> letter));
-#             od;
-#             Append(newRel, [newRelSide]);
-#         od;
-#         Append(out, [newRel]);
-#     od;
-
-#     return out;
-# end);
-
 InstallMethod(SemigroupOfStzPresentation,
 [IsStzPresentation],
 function(stz)
@@ -242,7 +207,7 @@ InstallMethod(SetMapToUnreducedFpSemigroup,
 [IsStzPresentation, IsList],
 function(stz, newMaps)
     if not ForAll(newMaps, x -> IsList(x) and ForAll(x, IsPosInt)) then
-        ErrorNoReturn("argument <newMaps> must be a list of positive integers,");
+      ErrorNoReturn("argument <newMaps> must be a list of positive integers,");
     fi;
     stz!.mapToUnreducedFpSemigroup := newMaps;
 end);
@@ -251,7 +216,8 @@ InstallMethod(MapToUnreducedFpSemigroupReplaceSubword,
 [IsStzPresentation, IsList, IsList],
 function(stz, subWord, newSubWord)
     local newMaps;
-    newMaps := List(stz!.mapToUnreducedFpSemigroup, x -> SEMIGROUPS.StzReplaceSubwordRel(x, subWord, newSubWord));
+    newMaps := List(stz!.mapToUnreducedFpSemigroup,
+                  x -> SEMIGROUPS.StzReplaceSubwordRel(x, subWord, newSubWord));
     stz!.mapToUnreducedFpSemigroup := newMaps;
 end);
 
@@ -494,7 +460,7 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   tempRels := ShallowCopy(RelationsOfStzPresentation(stz));
   Remove(tempRels, index);
   tempRels := SEMIGROUPS.StzReplaceSubword(tempRels, [gen], expr);
-  SetRelationsOfStzPresentation(stz, tempRels);  
+  SetRelationsOfStzPresentation(stz, tempRels);
   Apply(stz!.rels, x -> List(x, y -> List(y, decrement)));
 
   # remove generator.
@@ -517,7 +483,8 @@ SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
       relSideCopy := ShallowCopy(relSide);
       while pos <> fail do
         count := count + 1;
-        relSideCopy := List([(pos + len) .. Length(relSideCopy)], x -> relSideCopy[x]);
+        relSideCopy := List([(pos + len) .. Length(relSideCopy)],
+                            x -> relSideCopy[x]);
         pos := PositionSublist(relSideCopy, subWord);
       od;
     od;
@@ -537,22 +504,25 @@ SEMIGROUPS.StzCheckSubstituteInstancesOfRelation := function(stz, relIndex)
 end;
 
 SEMIGROUPS.StzSubstituteInstancesOfRelation := function(stz, relIndex)
-  local rels, rel, containsRel, subword, tempRelSide1, tempRelSide2, i, j, replaceWord;
+  local rels, rel, containsRel, subword, tempRelSide1, tempRelSide2, i, j,
+        replaceWord;
   rels := RelationsOfStzPresentation(stz);
   rel := rels[relIndex];
   subword := Maximum(rel);
   replaceWord := Minimum(rel);
   containsRel := PositionsProperty(rels,
-                  x -> (PositionSublist(x[1], subword) <> fail and x[1] <> subword)
-                        or (PositionSublist(x[2], subword) <> fail and x[2] <> subword));
+            x -> (PositionSublist(x[1], subword) <> fail and x[1] <> subword)
+              or (PositionSublist(x[2], subword) <> fail and x[2] <> subword));
   for i in containsRel do
     tempRelSide1 := ShallowCopy(rels[i][1]);
     tempRelSide2 := ShallowCopy(rels[i][2]);
     # Ugly as sin make better
     if PositionSublist(tempRelSide1, subword) <> fail then
-      tempRelSide1 := SEMIGROUPS.StzReplaceSubwordRel(tempRelSide1, subword, replaceWord);
+      tempRelSide1 := SEMIGROUPS.StzReplaceSubwordRel(tempRelSide1, subword,
+                                                      replaceWord);
     elif PositionSublist(tempRelSide2, subword) <> fail then
-      tempRelSide2 := SEMIGROUPS.StzReplaceSubwordRel(tempRelSide2, subword, replaceWord);
+      tempRelSide2 := SEMIGROUPS.StzReplaceSubwordRel(tempRelSide2, subword,
+                                                      replaceWord);
     fi;
     SEMIGROUPS.TietzeTransformation1(stz, [tempRelSide1, tempRelSide2]);
   od;
@@ -569,7 +539,8 @@ SEMIGROUPS.StzCheckRemoveRedundantGenerator := function(stz, gen)
     if rel[1] = [gen] or rel[2] = [gen] then
       relLen := Length(Maximum(rel));
       numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, [gen]);
-      relReduce := SEMIGROUPS.StzCheckSubstituteInstancesOfRelation(stz, Position(rels, rel));
+      relReduce := SEMIGROUPS.StzCheckSubstituteInstancesOfRelation(stz,
+                                                          Position(rels, rel));
       return relReduce - 1 - Length(rel[1]) - Length(rel[2]);
     fi;
   od;
