@@ -56,3 +56,5 @@ DeclareOperation("StzAddRelation", [IsStzPresentation, IsList]);
 DeclareOperation("StzRemoveRelation", [IsStzPresentation, IsPosInt]);
 DeclareOperation("StzAddRelationNC", [IsStzPresentation, IsList]);
 DeclareOperation("StzRemoveRelationNC", [IsStzPresentation, IsPosInt]);
+
+DeclareOperation("StzPrintRelations", [IsStzPresentation]);

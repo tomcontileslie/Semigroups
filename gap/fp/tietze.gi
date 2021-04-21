@@ -483,6 +483,30 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   SetGeneratorsOfStzPresentation(stz, tempGens);
 end;
 
+InstallMethod(StzPrintRelations, "For an stz presentation",
+[IsStzPresentation],
+function(stz)
+  local rels, f, gens, w1, w2, out, i;
+  # This function displays the current relations in terms of the current
+  # generators for a semigroup Tietze presentation.
+  # We'd like patterns to be grouped, i.e. abab=(ab)^2 when displayed. To
+  # do this we sneakily piggyback off display methods for the free semigroup.
+  rels := RelationsOfStzPresentation(stz);
+  f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
+  gens := GeneratorsOfSemigroup(f);
+
+  for i in [1 .. Length(rels)] do
+    w1  := Product(rels[i][1], x -> gens[x]);
+    w2  := Product(rels[i][2], x -> gens[x]);
+    out := Concatenation(PrintString(i),
+                         ". ",
+                         PrintString(w1),
+                         " = ",
+                         PrintString(w2));
+    Info(InfoWarning, 1, out);
+  od;
+end);
+
 ###### USER-FRIENDLY TIETZE TRANSFORMATIONS
 
 ### TIETZE 1
@@ -719,6 +743,94 @@ SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
     od;
   od;
   return count;
+end;
+
+SEMIGROUPS.StzFrequentSubwordCheck := function(stz)
+  local best_gain, best_word, flat, count_occurrences, n, c, gain, word,
+        pair, i, j;
+  # SUPER INEFFICIENT (~n^3), do something about this eventually (@Reinis?)
+  # Look at every subword, count how many times it appears, and see whether
+  # introducing a new generator equal to a given subword would make the
+  # whole presentation shorter
+  best_gain := 0;   # best reduction seen so far
+  best_word := [];  # word currently holding record
+
+  # flat list of words (don't care about which one is related to which)
+  flat := [];
+  for pair in stz!.rels do
+    Append(flat, ShallowCopy(pair));  # TODO might not need shallow copy
+  od;
+
+  # function to count occurrences of subword in list of lists
+  count_occurrences := function(list, subword)
+    local count, k, l, i, word;
+    count := 0;
+    k     := Length(subword);
+    for word in list do
+      l := Length(word);
+      i := 1;  # index at which to start counting
+      while i <= l - k + 1 do
+        if word{[i .. i + k - 1]} = subword then
+          count := count + 1;
+          # jump to end of occurrence
+          i := i + k;
+        else
+          # move over by one
+          i := i + 1;
+        fi;
+      od;
+    od;
+    return count;
+  end;
+
+  # now check for every subword, how many times it appears
+  for word in flat do
+    # N.B. ASSUMES WORDS NON-EMPTY
+    n := Length(word);
+    for i in [1 .. n - 1] do
+      for j in [i + 1 .. n] do
+        c := count_occurrences(flat, word{[i .. j]});
+        # now calculate what a gain that would be:
+        # subbing out every instance of word{[i .. j]} for a word of length 1
+        # makes us gain j - i characters per substitution
+        # BUT, we also have a new generator cost of 1
+        # AND a new relation cost of 3 + j - i
+        gain := (c - 1) * (j - i) - 3;
+        if gain > best_gain then
+          best_gain := gain;
+          best_word := word{[i .. j]};
+        fi;
+      od;
+    od;
+  od;
+  return rec(reductions := Length(stz) - best_gain,
+             word := best_word);
+end;
+
+SEMIGROUPS.StzFrequentSubwordApply := function(stz, metadata)
+  local word, rels, n, gens, k, shortened_rels, new_rel, i;
+  # have received instruction to sub out metadata.word for something shorter.
+  word := metadata.word;
+  rels := ShallowCopy(RelationsOfStzPresentation(stz));
+  n    := Length(rels);
+  gens := ShallowCopy(GeneratorsOfStzPresentation(stz));
+  k    := Length(gens);
+
+  # first, add new generator.
+  SEMIGROUPS.TietzeTransformation3(stz, word);
+
+  # then, go through and add loads of relations which are the old ones but
+  # with the old word subbed out.
+  shortened_rels := SEMIGROUPS.StzReplaceSubword(rels, word, [k + 1]);
+  for new_rel in shortened_rels do
+    SEMIGROUPS.TietzeTransformation1(stz, new_rel);
+  od;
+
+  # finally, remove the original relations.
+  for i in [1 .. n] do
+    SEMIGROUPS.TietzeTransformation2(stz, i);
+  od;
+  return;
 end;
 
 SEMIGROUPS.StzCheckSubstituteInstancesOfRelation := function(stz, relIndex)
