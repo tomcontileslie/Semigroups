@@ -11,15 +11,8 @@
 # (as it likely will be) there will be no issues.
 ################################################################################
 
-# DeclareOperation("StzPresentation", [IsList, IsList]);
 DeclareOperation("StzPresentation", [IsFpSemigroup]);
 DeclareCategory("IsStzPresentation", IsList);
-#DeclareRepresentation("IsStzPresentationRep", IsStzPresentation and IsPositionalObjectRep,
-#                        3);
-
-
-# Can add extra representations as attributes?
-# Maybe use 'representation' instead
 
 # Current relations in the process of being reduced
 DeclareAttribute("RelationsOfStzPresentation", IsStzPresentation);
@@ -39,16 +32,14 @@ DeclareOperation("SemigroupOfStzPresentation", [IsStzPresentation]);
 
 # Stores original semigroup before reductions
 DeclareAttribute("UnreducedSemigroupOfStzPresentation", IsStzPresentation);
-
-# Stores a map between the words of each semigroup (how?)
-# Change as relations change
-# Otherwise must keep track of all tietze transforms i suppose
 DeclareAttribute("MapToUnreducedFpSemigroup", IsStzPresentation);
 
-DeclareOperation("SetMapToUnreducedFpSemigroup", [IsStzPresentation, IsPosInt, IsList]); # no longer needed?
+DeclareOperation("SetMapToUnreducedFpSemigroup",
+                [IsStzPresentation, IsPosInt, IsList]);
 DeclareOperation("SetMapToUnreducedFpSemigroup", [IsStzPresentation, IsList]);
 
-DeclareOperation("MapToUnreducedFpSemigroupReplaceSubword", [IsStzPresentation, IsList, IsList]);
+DeclareOperation("MapToUnreducedFpSemigroupReplaceSubword",
+                [IsStzPresentation, IsList, IsList]);
 
 # FP semigroup attributes
 DeclareAttribute("UnreducedFpSemigroupOfFpSemigroup", IsFpSemigroup);

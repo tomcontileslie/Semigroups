@@ -503,7 +503,7 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   SetGeneratorsOfStzPresentation(stz, tempGens);
 end;
 
-SEMIGROUPS.StzPresentationCountRelationSubwords := function(stz, subWord)
+SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
   local count, relSide, rel, rels, pos, len, relSideCopy;
   rels := RelationsOfStzPresentation(stz);
   len := Length(subWord);
@@ -525,18 +525,18 @@ SEMIGROUPS.StzPresentationCountRelationSubwords := function(stz, subWord)
   return count;
 end;
 
-SEMIGROUPS.StzPresentationCheckSubstituteInstancesOfRelation := function(stz, relIndex)
-  local len, newLen, relLen, numInstances, rel, relToReplace, relLenDiff;
+SEMIGROUPS.StzCheckSubstituteInstancesOfRelation := function(stz, relIndex)
+  local len, newLen, numInstances, rel, relToReplace, relLenDiff;
   rel := RelationsOfStzPresentation(stz)[relIndex];
   relToReplace := Maximum(rel);
   len := Length(stz);
   relLenDiff := Length(relToReplace) - Length(Minimum(rel));
-  numInstances := SEMIGROUPS.StzPresentationCountRelationSubwords(stz, relToReplace);
+  numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, relToReplace);
   newLen := len - numInstances * relLenDiff;
   return newLen;
 end;
 
-SEMIGROUPS.StzPresentationSubstituteInstancesOfRelation := function(stz, relIndex)
+SEMIGROUPS.StzSubstituteInstancesOfRelation := function(stz, relIndex)
   local rels, rel, containsRel, subword, tempRelSide1, tempRelSide2, i, j, replaceWord;
   rels := RelationsOfStzPresentation(stz);
   rel := rels[relIndex];
@@ -562,14 +562,14 @@ SEMIGROUPS.StzPresentationSubstituteInstancesOfRelation := function(stz, relInde
   od;
 end;
 
-SEMIGROUPS.StzPresentationCheckRemoveRedundantGenerator := function(stz, gen)
-  local len, newLen, relLen, numInstances, rel, rels, gen, relReduce;
+SEMIGROUPS.StzCheckRemoveRedundantGenerator := function(stz, gen)
+  local len, newLen, relLen, numInstances, rel, rels, relReduce;
   rels := RelationsOfStzPresentation(stz);
   for rel in rels do
     if rel[1] = [gen] or rel[2] = [gen] then
       relLen := Length(Maximum(rel));
-      numInstances := SEMIGROUPS.StzPresentationCountRelationSubwords(stz, [gen]);
-      relReduce := SEMIGROUPS.StzPresentationCheckSubstituteInstancesOfRelation(stz, Position(rels, rel));
+      numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, [gen]);
+      relReduce := SEMIGROUPS.StzCheckSubstituteInstancesOfRelation(stz, Position(rels, rel));
       return relReduce - 1 - Length(rel[1]) - Length(rel[2]);
     fi;
   od;
@@ -578,7 +578,7 @@ end;
 
 # Simple check to see if any relation is literally the same - verbatim - as
 # another
-SEMIGROUPS.StzPresentationCheckRemoveDuplicateRelation := function(stz, relIndex)
+SEMIGROUPS.StzCheckRemoveDuplicateRelation := function(stz, relIndex)
   local rel, rels, i, tempRel;
   rels := RelationsOfStzPresentation(stz);
   rel := rels[relIndex];
