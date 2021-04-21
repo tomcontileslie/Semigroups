@@ -11,12 +11,8 @@
 # (as it likely will be) there will be no issues.
 ################################################################################
 
-# DeclareOperation("StzPresentation", [IsList, IsList]);
 DeclareOperation("StzPresentation", [IsFpSemigroup]);
 DeclareCategory("IsStzPresentation", IsList);
-
-# Can add extra representations as attributes?
-# Maybe use 'representation' instead
 
 # Current relations in the process of being reduced
 DeclareAttribute("RelationsOfStzPresentation", IsStzPresentation);
