@@ -122,10 +122,10 @@ function(S)
                 x -> [LetterRepAssocWord(x[1]), LetterRepAssocWord(x[2])]);
 
     out := rec(gens := List(GeneratorsOfSemigroup(S), x -> ViewString(x)),
-        rels := rels,
-        unreducedSemigroup := S,
-        mapToUnreducedFpSemigroup := List([1..Length(GeneratorsOfSemigroup(S))],
-                                          x -> [x]));
+      rels := rels,
+      unreducedSemigroup := S,
+      mapToUnreducedFpSemigroup := List([1 .. Length(GeneratorsOfSemigroup(S))],
+                                        x -> [x]));
 
     return ObjectifyWithAttributes(out, type,
                                     RelationsOfStzPresentation,
@@ -144,7 +144,7 @@ InstallMethod(SetRelationsOfStzPresentation,
 function(stz, arg)
     if not ForAll(arg, IsList) or
         not ForAll(arg, x -> ForAll(x, IsList)) or
-        not ForAll(arg, x -> ForAll(x, y -> ForAll(y,IsPosInt))) then
+        not ForAll(arg, x -> ForAll(x, y -> ForAll(y, IsPosInt))) then
         ErrorNoReturn("parameter <arg> must be a list of relations of the ",
                     " form letter then exponent,");
     fi;
@@ -533,7 +533,7 @@ SEMIGROUPS.StzSubstituteInstancesOfRelation := function(stz, relIndex)
 end;
 
 SEMIGROUPS.StzCheckRemoveRedundantGenerator := function(stz, gen)
-  local len, newLen, relLen, numInstances, rel, rels, relReduce;
+  local rel, rels, relReduce;
   rels := RelationsOfStzPresentation(stz);
   for rel in rels do
     if rel[1] = [gen] or rel[2] = [gen] then
