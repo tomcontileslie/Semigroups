@@ -32,16 +32,22 @@ DeclareOperation("SemigroupOfStzPresentation", [IsStzPresentation]);
 
 # Stores original semigroup before reductions
 DeclareAttribute("UnreducedSemigroupOfStzPresentation", IsStzPresentation);
-DeclareAttribute("MapToUnreducedFpSemigroup", IsStzPresentation);
 
-DeclareOperation("SetMapToUnreducedFpSemigroup",
-                [IsStzPresentation, IsPosInt, IsList]);
-DeclareOperation("SetMapToUnreducedFpSemigroup", [IsStzPresentation, IsList]);
+# Stores a map between the words of each semigroup (how?)
+# Change as relations change
+# Otherwise must keep track of all tietze transforms i suppose
+DeclareAttribute("TietzeForwardMap", IsStzPresentation);
+DeclareAttribute("TietzeBackwardMap", IsStzPresentation);
 
-DeclareOperation("MapToUnreducedFpSemigroupReplaceSubword",
-                [IsStzPresentation, IsList, IsList]);
+DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsPosInt, IsList]); # no longer needed?
+DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsList]);
+DeclareOperation("SetTietzeBackwardMap", [IsStzPresentation, IsList]);
+
+DeclareOperation("TietzeForwardMapReplaceSubword", [IsStzPresentation, IsList, IsList]);
 
 # FP semigroup attributes
 DeclareAttribute("UnreducedFpSemigroupOfFpSemigroup", IsFpSemigroup);
-DeclareAttribute("MapToUnreducedFpSemigroup", IsFpSemigroup);
+DeclareAttribute("TietzeForwardMap", IsFpSemigroup);
+DeclareAttribute("TietzeBackwardMap", IsFpSemigroup);
 
+DeclareOperation("TietzeIsomorphism", [IsStzPresentation]);

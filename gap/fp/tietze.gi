@@ -39,6 +39,19 @@ SEMIGROUPS.StzReplaceSubwordRel := function(letterRep, subword, newWord)
     fi;
 end;
 
+# takes in a letterrep word and replaces every letter with its expression in
+# dict.
+# NOTE: does not check arguments. Assumes in good faith that every integer
+# in word has an entry in the list <dict>.
+SEMIGROUPS.StzExpandWord := function(word, dict)
+  local out, letter;
+  out := [];
+  for letter in word do
+    Append(out, dict[letter]);
+  od;
+  return out;
+end;
+
 SEMIGROUPS.NewGeneratorName := function(names)
   local alph, Alph, na, nA, names_prefx, names_suffx, int_positions, prefixes,
         prefixes_collected, p, ints, i, name;
@@ -113,42 +126,47 @@ end;
 InstallMethod(StzPresentation, "for a finitely presented semigroup",
 [IsFpSemigroup],
 function(S)
-    local out, rels, type;
+  local out, rels, type;
 
-    type := NewType(NewFamily("StzFamily", IsStzPresentation),
-                    IsStzPresentation and IsComponentObjectRep);
+  type := NewType(NewFamily("StzFamily", IsStzPresentation),
+                  IsStzPresentation and IsComponentObjectRep);
 
-    rels := List(RelationsOfFpSemigroup(S),
-                x -> [LetterRepAssocWord(x[1]), LetterRepAssocWord(x[2])]);
+  rels := List(RelationsOfFpSemigroup(S),
+              x -> [LetterRepAssocWord(x[1]), LetterRepAssocWord(x[2])]);
 
-    out := rec(gens := List(GeneratorsOfSemigroup(S), x -> ViewString(x)),
-      rels := rels,
-      unreducedSemigroup := S,
-      mapToUnreducedFpSemigroup := List([1 .. Length(GeneratorsOfSemigroup(S))],
+  out := rec(gens               := List(GeneratorsOfSemigroup(S),
+                                        x -> ViewString(x)),
+             rels               := rels,
+             unreducedSemigroup := S,
+             tietzeForwardMap   := List([1 .. Length(GeneratorsOfSemigroup(S))],
+                                        x -> [x]),
+             tietzeBackwardMap  := List([1 .. Length(GeneratorsOfSemigroup(S))],
                                         x -> [x]));
 
-    return ObjectifyWithAttributes(out, type,
-                                    RelationsOfStzPresentation,
-                                    out!.rels,
-                                    GeneratorsOfStzPresentation,
-                                    out!.gens,
-                                    UnreducedSemigroupOfStzPresentation,
-                                    out!.unreducedSemigroup,
-                                    MapToUnreducedFpSemigroup,
-                                    out!.mapToUnreducedFpSemigroup);
+  return ObjectifyWithAttributes(out, type,
+                                  RelationsOfStzPresentation,
+                                  out!.rels,
+                                  GeneratorsOfStzPresentation,
+                                  out!.gens,
+                                  UnreducedSemigroupOfStzPresentation,
+                                  out!.unreducedSemigroup,
+                                  TietzeForwardMap,
+                                  out!.tietzeForwardMap,
+                                  TietzeBackwardMap,
+                                  out!.tietzeBackwardMap);
 end);
 
-# Add checks cause this can break everything
+# TODO Add checks cause this can break everything
 InstallMethod(SetRelationsOfStzPresentation,
 [IsStzPresentation, IsList],
 function(stz, arg)
-    if not ForAll(arg, IsList) or
-        not ForAll(arg, x -> ForAll(x, IsList)) or
-        not ForAll(arg, x -> ForAll(x, y -> ForAll(y, IsPosInt))) then
-        ErrorNoReturn("parameter <arg> must be a list of relations of the ",
-                    " form letter then exponent,");
-    fi;
-    stz!.rels := arg;
+  if not ForAll(arg, IsList) or
+      not ForAll(arg, x -> ForAll(x, IsList)) or
+      not ForAll(arg, x -> ForAll(x, y -> ForAll(y, IsPosInt))) then
+        ErrorNoReturn("parameter <arg> must be a list of pairs of words in\n",
+                     "LetterRep format,");
+  fi;
+  stz!.rels := arg;
 end);
 
 InstallMethod(RelationsOfStzPresentation,
@@ -163,10 +181,16 @@ function(stz)
     return stz!.unreducedSemigroup;
 end);
 
-InstallMethod(MapToUnreducedFpSemigroup,
+InstallMethod(TietzeForwardMap,
 [IsStzPresentation],
 function(stz)
-    return stz!.mapToUnreducedFpSemigroup;
+    return stz!.tietzeForwardMap;
+end);
+
+InstallMethod(TietzeBackwardMap,
+[IsStzPresentation],
+function(stz)
+    return stz!.tietzeBackwardMap;
 end);
 
 InstallMethod(GeneratorsOfStzPresentation,
@@ -192,33 +216,80 @@ function(stz)
     SetUnreducedFpSemigroupOfFpSemigroup(out,
                                     UnreducedSemigroupOfStzPresentation(stz));
     # May well break now but this MUST exist so its okay at the moment
-    SetMapToUnreducedFpSemigroup(out,
-                            MapToUnreducedFpSemigroup(stz));
+    # TCL: this may be useless (we can just define an operation on stz which
+    # will return an actual mapping object, rather than storing it as an
+    # attribute of the output semigroup)
+    SetTietzeForwardMap(out,
+                            TietzeForwardMap(stz));
     return out;
 end);
 
-InstallMethod(SetMapToUnreducedFpSemigroup,
-[IsStzPresentation, IsPosInt, IsList],
-function(stz, index, newMap)
-    stz!.mapToUnreducedFpSemigroup[index] := newMap;
+InstallMethod(TietzeIsomorphism,
+[IsStzPresentation],
+function(stz)
+  local source, range, forward_dict, forward_map, backward_dict, backward_map;
+  source := UnreducedSemigroupOfStzPresentation(stz);
+  range := SemigroupOfStzPresentation(stz);
+
+  # build forward map
+  forward_dict := TietzeForwardMap(stz);
+  forward_map  := function(word)
+    local new_word;
+    new_word := SEMIGROUPS.StzExpandWord(
+                LetterRepAssocWord(UnderlyingElement(word)), forward_dict);
+    return Product(new_word, x -> GeneratorsOfSemigroup(range)[x]);
+  end;
+
+  # build backward map
+  backward_dict := TietzeBackwardMap(stz);
+  backward_map  := function(word)
+    local new_word;
+    new_word := SEMIGROUPS.StzExpandWord(
+                LetterRepAssocWord(UnderlyingElement(word)), backward_dict);
+    return Product(new_word, x -> GeneratorsOfSemigroup(source)[x]);
+  end;
+
+  # TODO: are we okay to assume this is necessarily an isomorphism?
+  return MagmaIsomorphismByFunctionsNC(source,
+                                       range,
+                                       forward_map,
+                                       backward_map);
+
 end);
 
-InstallMethod(SetMapToUnreducedFpSemigroup,
+InstallMethod(SetTietzeForwardMap,
+[IsStzPresentation, IsPosInt, IsList],
+function(stz, index, newMap)
+    stz!.tietzeForwardMap[index] := newMap;
+end);
+
+InstallMethod(SetTietzeForwardMap,
+[IsStzPresentation, IsList],
+function(stz, newMaps)
+    if not ForAll(newMaps, x -> IsList(x) and ForAll(x, IsPosInt)) then
+        ErrorNoReturn("argument <newMaps> must be a list of positive integers,");
+    fi;
+    stz!.tietzeForwardMap := newMaps;
+end);
+
+InstallMethod(SetTietzeBackwardMap,
 [IsStzPresentation, IsList],
 function(stz, newMaps)
     if not ForAll(newMaps, x -> IsList(x) and ForAll(x, IsPosInt)) then
       ErrorNoReturn("argument <newMaps> must be a list of positive integers,");
     fi;
-    stz!.mapToUnreducedFpSemigroup := newMaps;
+    stz!.tietzeBackwardMap := newMaps;
 end);
 
-InstallMethod(MapToUnreducedFpSemigroupReplaceSubword,
+InstallMethod(TietzeForwardMapReplaceSubword,
 [IsStzPresentation, IsList, IsList],
 function(stz, subWord, newSubWord)
     local newMaps;
-    newMaps := List(stz!.mapToUnreducedFpSemigroup,
-                  x -> SEMIGROUPS.StzReplaceSubwordRel(x, subWord, newSubWord));
-    stz!.mapToUnreducedFpSemigroup := newMaps;
+    newMaps := List(stz!.tietzeForwardMap,
+                    x -> SEMIGROUPS.StzReplaceSubwordRel(x,
+                                                         subWord,
+                                                         newSubWord));
+    stz!.tietzeForwardMap := newMaps;
 end);
 
 InstallMethod(Length,
@@ -360,7 +431,7 @@ end;
 
 # TIETZE TRANSFORMATION 3: ADD NEW GENERATOR
 SEMIGROUPS.TietzeTransformation3 := function(stz, word)
-  local new_gens, new_rels;
+  local new_gens, new_rels, back_word, new_maps, letter;
   # Arguments:
   # - <stz> should be a Semigroup Tietze object.
   # - <word> should be a LetterRep word
@@ -380,11 +451,21 @@ SEMIGROUPS.TietzeTransformation3 := function(stz, word)
   Add(new_rels, [word, [Length(stz!.gens) + 1]]);
   SetGeneratorsOfStzPresentation(stz, new_gens);
   SetRelationsOfStzPresentation(stz, new_rels);
+
+  # Now we need to update the backwards maps to express the new generator in
+  # terms of the original generators.
+  back_word := [];
+  new_maps  := ShallowCopy(TietzeBackwardMap(stz));
+  for letter in word do
+    Append(back_word, new_maps[letter]);
+  od;
+  Add(new_maps, back_word);
+  SetTietzeBackwardMap(stz, new_maps);
 end;
 
 # TIETZE TRANSFORMATION 4: REMOVE GENERATOR
 SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
-  local found_expr, expr, index, i, decrement, tempRels, tempGens, tempMaps;
+  local found_expr, expr, index, decrement, tempMaps, tempRels, tempGens, i;
   # Arguments:
   # - <stz> should be a Semigroup Tietze object.
   # - <gen> should be a pos int (number of generator to be removed)
@@ -449,13 +530,18 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
     fi;
   end;
 
-  # update mapping component
-  MapToUnreducedFpSemigroupReplaceSubword(stz, [gen], expr);
-  tempMaps := ShallowCopy(MapToUnreducedFpSemigroup(stz));
+  # update forward mapping component
+  TietzeForwardMapReplaceSubword(stz, [gen], expr);
+  tempMaps := ShallowCopy(TietzeForwardMap(stz));
   Apply(tempMaps, x -> List(x, decrement));
-  SetMapToUnreducedFpSemigroup(stz, tempMaps);
+  SetTietzeForwardMap(stz, tempMaps);
 
-  # otherwise, sub in expression we found and remove relation we used for gen
+  # remove generator from backward mapping component
+  tempMaps := ShallowCopy(TietzeBackwardMap(stz));
+  Remove(tempMaps, gen);
+  SetTietzeBackwardMap(stz, tempMaps);
+
+  # sub in expression we found and remove relation we used for gen
   # TODO stop the middle man ext rep conversion
   tempRels := ShallowCopy(RelationsOfStzPresentation(stz));
   Remove(tempRels, index);
