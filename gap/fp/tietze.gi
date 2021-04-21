@@ -368,94 +368,22 @@ function(stz)
     return Length(stz);
 end);
 
-# TIETZE TRANSFORMATION 1: ADD REDUNDANT RELATION
+# TIETZE TRANSFORMATION 1: INTERNAL: ADD REDUNDANT RELATION - NO CHECK
 SEMIGROUPS.TietzeTransformation1 := function(stz, pair)
-  local f, free_fam, r, s, fp_fam, w1, w2, p1, p2, rels_copy;
-  # Arguments:
-  # - <stz> should be a Semigroup Tietze object.
-  # - <pair> should be a pair of LetterRep words.
-  # TODO there might be a better input format for second argument.
-  #
-  # Returns:
-  # - nothing, and modifies <stz> in place with <pair> added, if <pair> follows
-  #   from the relations already present in <stz>.
-  # - ErrorNoReturn if the pair cannot be deduced from current relations.
-
-  # TODO argument checks
-
-  # first check that the pair can be deduced from the other relations, by
-  # creating fp semigroup with current relations.
-  f        := FreeSemigroup(stz!.gens);  # base free semigroup
-  free_fam := FamilyObj(f.1);            # marrow for creating free semigp words
-  r        := List(stz!.rels,
-                   x -> List(x, y -> AssocWordByLetterRep(free_fam, y)));
-  s        := f / r;                    # fp semigroup
-  fp_fam   := FamilyObj(s.1);           # marrow for creating fp words
-  # words first in free semigroup, then map to fp semigroup:
-  w1       := AssocWordByLetterRep(free_fam, pair[1]);
-  w2       := AssocWordByLetterRep(free_fam, pair[2]);
-  p1       := ElementOfFpSemigroup(fp_fam, w1);
-  p2       := ElementOfFpSemigroup(fp_fam, w2);
-  # check if words are equal in the fp semigroup
-  # WARNING: may run forever if undecidable
-  if p1 = p2 then
-    rels_copy := ShallowCopy(stz!.rels);
-    Add(rels_copy, pair);
-    stz!.rels := rels_copy;
-    return;
-  else
-    ErrorNoReturn("Argument <pair> must be equal in the presentation <stz>");
-  fi;
+  local rels_copy;
+  rels_copy := ShallowCopy(stz!.rels);
+  Add(rels_copy, pair);
+  stz!.rels := rels_copy;
+  return;
 end;
 
-# TIETZE TRANSFORMATION 2: REMOVE REDUNDANT RELATION
+# TIETZE TRANSFORMATION 2: INTERNAL: REMOVE REDUNDANT RELATION - NO CHECK
 # TODO will this work on stz = rec(gens:=[a], rels:=[[a,a]])?
 SEMIGROUPS.TietzeTransformation2 := function(stz, index)
-  local rels, pair, new_f, new_gens, new_s, free_fam, w1, w2, fp_fam, p1, p2;
-  # Arguments:
-  # - <stz> should be a Semigroup Tietze object.
-  # - <index> should be the index of the relation needing removing in the
-  # overall list of relations.
-  #
-  # Returns:
-  # - nothing, and modifies <stz> in place with <index>^th pair removed, if that
-  #   pair follows from the relations already present in <stz>.
-  # - ErrorNoReturn if the pair to be removed cannot be deduced from the other
-  #   relations.
-  rels := ShallowCopy(stz!.rels);
-  if index > Length(rels) then
-    ErrorNoReturn("Second argument <index> must be less than or equal to \n",
-                  "the number of relations of the first argument <stz>");
-  fi;
-
-  # create hypothetical fp semigroup that would be the result of removing
-  # the requested pair
-  pair := rels[index];
+  local rels;
+  rels := ShallowCopy(RelationsOfStzPresentation(stz));
   Remove(rels, index);
-  new_f    := FreeSemigroup(stz!.gens);
-  new_gens := GeneratorsOfSemigroup(new_f);
-  new_s    := new_f / List(rels,
-                           x -> List(x,
-                                     y -> Product(List(y,
-                                                       z -> new_gens[z]))));
-
-  # create two associative words
-  free_fam := FamilyObj(new_f.1);
-  w1       := AssocWordByLetterRep(free_fam, pair[1]);
-  w2       := AssocWordByLetterRep(free_fam, pair[2]);
-
-  # map these words to hypothetical fp semigroup words and check equality
-  fp_fam := FamilyObj(new_s.1);
-  p1     := ElementOfFpSemigroup(fp_fam, w1);
-  p2     := ElementOfFpSemigroup(fp_fam, w2);
-  # WARNING: may run forever if undecidable
-  if p1 = p2 then
-    stz!.rels := rels;
-    return;
-  else
-    ErrorNoReturn("Second argument <index> must point to a relation that is \n",
-                  "redundant in the presentation <stz>");
-  fi;
+  stz!.rels := rels;
 end;
 
 # TIETZE TRANSFORMATION 3: ADD NEW GENERATOR
@@ -583,3 +511,218 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   Remove(tempGens, gen);
   SetGeneratorsOfStzPresentation(stz, tempGens);
 end;
+
+###### USER-FRIENDLY TIETZE TRANSFORMATIONS
+
+### TIETZE 1
+InstallMethod(StzAddRelation, "For an stz presentation and a pair of words",
+[IsStzPresentation, IsList],
+function(stz, pair)
+  local n, f, free_fam, r, s, fp_fam, w1, w2, p1, p2, word, letter;
+  # <pair> should be a pair of LetterRep words.
+
+  # argument checks:
+  if Length(pair) <> 2 then
+    ErrorNoReturn("Second argument <pair> should be a list of length 2");
+  fi;
+  n := Length(stz!.gens);
+  for word in pair do
+    if not IsList(word) then
+      TryNextMethod();  # pass this on to the case where the list may be a pair
+                        # of words in OG semigroup
+    elif Length(word) = 0 then
+      ErrorNoReturn("Words in second argument <pair> should be non-empty");
+    else
+      for letter in word do
+        if not (IsPosInt(letter) and letter <= n) then
+          ErrorNoReturn("Words in second argument <pair> should be lists of\n",
+                        "pos ints no greater than the number of generators\n",
+                        "of first argument <stz>");
+        fi;
+      od;
+    fi;
+  od;
+
+  # check that the pair can be deduced from the other relations, by
+  # creating fp semigroup with current relations.
+  f        := FreeSemigroup(stz!.gens);  # base free semigroup
+  free_fam := FamilyObj(f.1);            # marrow for creating free semigp words
+  r        := List(stz!.rels,
+                   x -> List(x, y -> AssocWordByLetterRep(free_fam, y)));
+  s        := f / r;                    # fp semigroup
+  fp_fam   := FamilyObj(s.1);           # marrow for creating fp words
+  # words first in free semigroup, then map to fp semigroup:
+  w1       := AssocWordByLetterRep(free_fam, pair[1]);
+  w2       := AssocWordByLetterRep(free_fam, pair[2]);
+  p1       := ElementOfFpSemigroup(fp_fam, w1);
+  p2       := ElementOfFpSemigroup(fp_fam, w2);
+  # check if words are equal in the fp semigroup
+  # WARNING: may run forever if undecidable
+  if p1 = p2 then
+    SEMIGROUPS.TietzeTransformation1(stz, pair);
+    return;
+  else
+    ErrorNoReturn("Argument <pair> must be equal in the presentation <stz>");
+  fi;
+end);
+
+InstallMethod(StzAddRelation,
+"For an stz presentation and a pair of semigroup elements",
+[IsStzPresentation, IsList],
+function(stz, pair)
+  local s, pairwords, word;
+  # argument checks
+  if Length(pair) <> 2 then
+    ErrorNoReturn("Second argument <pair> should be a list of length 2");
+  fi;
+
+  # retrieve original semigroup
+  s := UnreducedSemigroupOfStzPresentation(stz);
+  for word in pair do
+    if not word in s then
+      TryNextMethod();
+    fi;
+  od;
+
+  # convert into words in original semigroup
+  pairwords := List(pair, UnderlyingElement);
+  Apply(pairwords, LetterRepAssocWord);
+  # map to words in new semigroup
+  Apply(pairwords, x -> SEMIGROUPS.StzExpandWord(x, TietzeForwardMap(stz)));
+
+  # apply tietze1, with argument checks
+  StzAddRelation(stz, pairwords);
+  return;
+end);
+
+### TIETZE 1: NO CHECK
+InstallMethod(StzAddRelationNC, "For an stz presentation and a pair of words",
+[IsStzPresentation, IsList],
+function(stz, pair)
+  local n, word, letter;
+  # <pair> should be a pair of LetterRep words.
+
+  # argument checks:
+  if Length(pair) <> 2 then
+    ErrorNoReturn("Second argument <pair> should be a list of length 2");
+  fi;
+  n := Length(stz!.gens);
+  for word in pair do
+    if not IsList(word) then
+      TryNextMethod();  # pass this on to the case where the list may be a pair
+                        # of words in OG semigroup
+    elif Length(word) = 0 then
+      ErrorNoReturn("Words in second argument <pair> should be non-empty");
+    else
+      for letter in word do
+        if not (IsPosInt(letter) and letter <= n) then
+          ErrorNoReturn("Words in second argument <pair> should be lists of\n",
+                        "pos ints no greater than the number of generators\n",
+                        "of first argument <stz>");
+        fi;
+      od;
+    fi;
+  od;
+
+  # WARNING: no checks are run to verify that the pair is redundant. This
+  # may result in an output semigroup which is non-isomorphic to the
+  # starting semigroup.
+  SEMIGROUPS.TietzeTransformation1(stz, pair);
+  return;
+end);
+
+InstallMethod(StzAddRelationNC,
+"For an stz presentation and a pair of semigroup elements",
+[IsStzPresentation, IsList],
+function(stz, pair)
+  local s, pairwords, word;
+  # argument checks
+  if Length(pair) <> 2 then
+    ErrorNoReturn("Second argument <pair> should be a list of length 2");
+  fi;
+
+  # retrieve original semigroup
+  s := UnreducedSemigroupOfStzPresentation(stz);
+  for word in pair do
+    if not word in s then
+      TryNextMethod();
+    fi;
+  od;
+
+  # convert into words in original semigroup
+  pairwords := List(pair, UnderlyingElement);
+  Apply(pairwords, LetterRepAssocWord);
+  # map to words in new semigroup
+  Apply(pairwords, x -> SEMIGROUPS.StzExpandWord(x, TietzeForwardMap(stz)));
+
+  # apply tietze1, without argument checks
+  # WARNING: no checks are run to verify that the pair is redundant. This
+  # may result in an output semigroup which is non-isomorphic to the
+  # starting semigroup.
+  SEMIGROUPS.TietzeTransformation1(stz, pairwords);
+  return;
+end);
+
+### TIETZE 2
+InstallMethod(StzRemoveRelation,
+"For an stz presentation and a pos int",
+[IsStzPresentation, IsPosInt],
+function(stz, index)
+  local rels, pair, new_f, new_gens, new_s, free_fam, w1, w2, fp_fam, p1, p2;
+  # <index> should be the index of the relation needing removing in the
+  # overall list of relations.
+
+  # argument check: valid index
+  rels := ShallowCopy(stz!.rels);
+  if index > Length(rels) then
+    ErrorNoReturn("Second argument <index> must be less than or equal to \n",
+                  "the number of relations of the first argument <stz>");
+  fi;
+
+  # create hypothetical fp semigroup that would be the result of removing
+  # the requested pair
+  pair := rels[index];
+  Remove(rels, index);
+  new_f    := FreeSemigroup(stz!.gens);
+  new_gens := GeneratorsOfSemigroup(new_f);
+  new_s    := new_f / List(rels,
+                           x -> List(x,
+                                     y -> Product(List(y,
+                                                       z -> new_gens[z]))));
+
+  # create two associative words
+  free_fam := FamilyObj(new_f.1);
+  w1       := AssocWordByLetterRep(free_fam, pair[1]);
+  w2       := AssocWordByLetterRep(free_fam, pair[2]);
+
+  # map these words to hypothetical fp semigroup words and check equality
+  fp_fam := FamilyObj(new_s.1);
+  p1     := ElementOfFpSemigroup(fp_fam, w1);
+  p2     := ElementOfFpSemigroup(fp_fam, w2);
+
+  # WARNING: may run forever if undecidable
+  if p1 = p2 then
+    SEMIGROUPS.TietzeTransformation2(stz, index);
+    return;
+  else
+    ErrorNoReturn("Second argument <index> must point to a relation that is \n",
+                  "redundant in the presentation <stz>");
+  fi;
+end);
+
+### TIETZE 2: NO CHECK
+InstallMethod(StzRemoveRelationNC,
+"For an stz presentation and a pos int",
+[IsStzPresentation, IsPosInt],
+function(stz, index)
+  if index > Length(RelationsOfStzPresentation(stz)) then
+    ErrorNoReturn("Second argument <index> must be less than or equal to \n",
+                  "the number of relations of the first argument <stz>");
+  fi;
+
+  # WARNING: no checks are run to verify that the pair is redundant. This
+  # may result in an output semigroup which is non-isomorphic to the
+  # starting semigroup.
+  SEMIGROUPS.TietzeTransformation2(stz, index);
+  return;
+end);
