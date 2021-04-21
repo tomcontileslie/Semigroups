@@ -23,7 +23,7 @@ end;
 # Searches a single LetterRepAssocWord list and replace instances of subword
 # with newWord
 SEMIGROUPS.StzReplaceSubwordRel := function(letterRep, subword, newWord)
-    local out, pos;
+    local out, pos, i;
     out := [];
     pos := PositionSublist(letterRep, subword);
     if pos <> fail then
@@ -418,7 +418,7 @@ end;
 
 # TIETZE TRANSFORMATION 4: REMOVE GENERATOR
 SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
-  local found_expr, expr, index, i, decrement, tempRels, tempGens;
+  local found_expr, expr, index, i, decrement, tempRels, tempGens, tempMaps;
   # Arguments:
   # - <stz> should be a Semigroup Tietze object.
   # - <gen> should be a pos int (number of generator to be removed)
@@ -502,3 +502,93 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   Remove(tempGens, gen);
   SetGeneratorsOfStzPresentation(stz, tempGens);
 end;
+
+SEMIGROUPS.StzPresentationCountRelationSubwords := function(stz, subWord)
+  local count, relSide, rel, rels, pos, len, relSideCopy;
+  rels := RelationsOfStzPresentation(stz);
+  len := Length(subWord);
+  count := 0;
+  for rel in rels do
+    for relSide in rel do
+      if relSide = subWord then
+        continue;
+      fi;
+      pos := PositionSublist(relSide, subWord);
+      relSideCopy := ShallowCopy(relSide);
+      while pos <> fail do
+        count := count + 1;
+        relSideCopy := List([(pos + len) .. Length(relSideCopy)], x -> relSideCopy[x]);
+        pos := PositionSublist(relSideCopy, subWord);
+      od;
+    od;
+  od;
+  return count;
+end;
+
+SEMIGROUPS.StzPresentationCheckSubstituteInstancesOfRelation := function(stz, relIndex)
+  local len, newLen, relLen, numInstances, rel, relToReplace, relLenDiff;
+  rel := RelationsOfStzPresentation(stz)[relIndex];
+  relToReplace := Maximum(rel);
+  len := Length(stz);
+  relLenDiff := Length(relToReplace) - Length(Minimum(rel));
+  numInstances := SEMIGROUPS.StzPresentationCountRelationSubwords(stz, relToReplace);
+  newLen := len - numInstances * relLenDiff;
+  return newLen;
+end;
+
+SEMIGROUPS.StzPresentationSubstituteInstancesOfRelation := function(stz, relIndex)
+  local rels, rel, containsRel, subword, tempRelSide1, tempRelSide2, i, j, replaceWord;
+  rels := RelationsOfStzPresentation(stz);
+  rel := rels[relIndex];
+  subword := Maximum(rel);
+  replaceWord := Minimum(rel);
+  containsRel := PositionsProperty(rels,
+                  x -> (PositionSublist(x[1], subword) <> fail and x[1] <> subword)
+                        or (PositionSublist(x[2], subword) <> fail and x[2] <> subword));
+  for i in containsRel do
+    tempRelSide1 := ShallowCopy(rels[i][1]);
+    tempRelSide2 := ShallowCopy(rels[i][2]);
+    # Ugly as sin make better
+    if PositionSublist(tempRelSide1, subword) <> fail then
+      tempRelSide1 := SEMIGROUPS.StzReplaceSubwordRel(tempRelSide1, subword, replaceWord);
+    elif PositionSublist(tempRelSide2, subword) <> fail then
+      tempRelSide2 := SEMIGROUPS.StzReplaceSubwordRel(tempRelSide2, subword, replaceWord);
+    fi;
+    SEMIGROUPS.TietzeTransformation1(stz, [tempRelSide1, tempRelSide2]);
+  od;
+  for j in [1 .. Length(containsRel)] do
+    SEMIGROUPS.TietzeTransformation2(stz, containsRel[j]);
+    containsRel := containsRel - 1;
+  od;
+end;
+
+SEMIGROUPS.StzPresentationCheckRemoveRedundantGenerator := function(stz, gen)
+  local len, newLen, relLen, numInstances, rel, rels, gen, relReduce;
+  rels := RelationsOfStzPresentation(stz);
+  for rel in rels do
+    if rel[1] = [gen] or rel[2] = [gen] then
+      relLen := Length(Maximum(rel));
+      numInstances := SEMIGROUPS.StzPresentationCountRelationSubwords(stz, [gen]);
+      relReduce := SEMIGROUPS.StzPresentationCheckSubstituteInstancesOfRelation(stz, Position(rels, rel));
+      return relReduce - 1 - Length(rel[1]) - Length(rel[2]);
+    fi;
+  od;
+  return Length(stz);
+end;
+
+# Simple check to see if any relation is literally the same - verbatim - as
+# another
+SEMIGROUPS.StzPresentationCheckRemoveDuplicateRelation := function(stz, relIndex)
+  local rel, rels, i, tempRel;
+  rels := RelationsOfStzPresentation(stz);
+  rel := rels[relIndex];
+  for i in Concatenation([1 .. relIndex - 1], [relIndex + 1 .. Length(rels)]) do
+    tempRel := rels[i];
+    if (tempRel[1] = rel[1] and tempRel[2] = rel[2]) or (tempRel[1] = rel[2] and
+        tempRel[2] = rel[1]) then
+      return Length(stz) - Length(rel[1]) - Length(rel[2]);
+    fi;
+  od;
+  return Length(stz);
+end;
+
