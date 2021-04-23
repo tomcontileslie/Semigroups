@@ -589,6 +589,16 @@ SEMIGROUPS.StzCheckSubstituteInstancesOfRelation := function(stz, relIndex)
   return newLen;
 end;
 
+SEMIGROUPS.StzCheckAllRelsSubInstances := function(stz)
+  local rels, i, out;
+  rels := RelationsOfStzPresentation(stz);
+  out := [];
+  for i in [1 .. Length(rels)] do
+    Append(out, [SEMIGROUPS.StzCheckSubstituteInstancesOfRelation(stz, i)]);
+  od;
+  return out;
+end;
+
 SEMIGROUPS.StzSubstituteInstancesOfRelation := function(stz, relIndex)
   local rels, rel, containsRel, subword, tempRelSide1, tempRelSide2, i, j,
         replaceWord;
@@ -619,7 +629,7 @@ SEMIGROUPS.StzSubstituteInstancesOfRelation := function(stz, relIndex)
 end;
 
 SEMIGROUPS.StzCheckRemoveRedundantGenerator := function(stz, gen)
-  local rel, rels, relReduce;
+  local rel, rels, relReduce, numInstances, relLen;
   rels := RelationsOfStzPresentation(stz);
   for rel in rels do
     if rel[1] = [gen] or rel[2] = [gen] then
@@ -631,6 +641,16 @@ SEMIGROUPS.StzCheckRemoveRedundantGenerator := function(stz, gen)
     fi;
   od;
   return Length(stz);
+end;
+
+SEMIGROUPS.StzCheckAllGensRedundant := function(stz)
+  local gens, out, i;
+  gens := [1 .. Length(GeneratorsOfStzPresentation(stz))];
+  out := [];
+  for i in gens do
+    Append(out, [SEMIGROUPS.StzCheckRemoveRedundantGenerator(stz, i)]);
+  od;
+  return out;
 end;
 
 # Simple check to see if any relation is literally the same - verbatim - as
@@ -649,3 +669,33 @@ SEMIGROUPS.StzCheckRemoveDuplicateRelation := function(stz, relIndex)
   return Length(stz);
 end;
 
+SEMIGROUPS.StzCheckAllRelsDuplicate := function(stz)
+  local rels, out, i;
+  rels := RelationsOfStzPresentation(stz);
+  out := [];
+  for i in [1 .. Length(rels)] do
+    Append(out, [SEMIGROUPS.StzCheckRemoveDuplicateRelation(stz, i)]);
+  od;
+  return out;
+end;
+
+SEMIGROUPS.StzSimplifyOnce := function(stz)
+  local rels, gens, results, mins, len, func, args, genRedundant;
+  rels := RelationsOfStzPresentation(stz);
+  results := [[SEMIGROUPS.TietzeTransformation4,
+                SEMIGROUPS.StzCheckAllGensRedundant(stz)],
+              [SEMIGROUPS.TietzeTransformation2,
+                SEMIGROUPS.StzCheckAllRelsDuplicate(stz)],
+              [SEMIGROUPS.StzSubstituteInstancesOfRelation,
+                SEMIGROUPS.StzCheckAllRelsSubInstances(stz)]];
+  Print(results);
+  len := Length(stz);
+  mins := List(results, x -> Minimum(x[2]));
+  if Minimum(mins) < len then
+    func := results[Position(mins, Minimum(mins))][1];
+    argPos := Position(mins, Minimum(mins));
+    func(stz, args);
+    return true;
+  fi;
+  return false;
+end;
