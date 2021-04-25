@@ -52,9 +52,13 @@ SEMIGROUPS.StzExpandWord := function(word, dict)
   return out;
 end;
 
-SEMIGROUPS.NewGeneratorName := function(names)
+SEMIGROUPS.NewGeneratorName := function(names_immut)
   local alph, Alph, na, nA, names_prefx, names_suffx, int_positions, prefixes,
-        prefixes_collected, p, ints, i, name;
+  prefixes_collected, p, ints, i, name, names;
+  names := [];
+  for name in names_immut do
+    Add(names, ShallowCopy(name));
+  od;
 
   # useful helper variables
   alph := "abcdefghijklmnopqrstuvwxyz";
@@ -95,8 +99,8 @@ SEMIGROUPS.NewGeneratorName := function(names)
   fi;
 
   # SPECIAL CASE 3: there are names like s1, s3, s23, etc or x12, etc
-  names_prefx := StructuralCopy(names);
-  names_suffx := StructuralCopy(names);
+  names_prefx := ShallowCopy(names);
+  names_suffx := ShallowCopy(names);
   Apply(names_prefx, x -> [x[1]]);
   for name in names_suffx do
     Remove(name, 1);
@@ -205,6 +209,9 @@ function(stz, newGens)
     stz!.gens := newGens;
 end);
 
+#####
+##### TODO: consider removing
+#####
 InstallMethod(SemigroupOfStzPresentation,
 [IsStzPresentation],
 function(stz)
@@ -337,6 +344,23 @@ InstallMethod(Size,
 [IsStzPresentation],
 function(stz)
     return Length(stz);
+end);
+
+InstallMethod(StzSimplifyPresentation,
+[IsStzPresentation],
+function(stz)
+  local len, newLen, transformApplied, count;
+  len := Length(stz);
+  transformApplied := true;
+  Print(ViewString(stz));
+  count := 0;
+  while transformApplied do
+    count := count + 1;
+    Print(count);
+    transformApplied := SEMIGROUPS.StzSimplifyOnce(stz);
+    Print("\n");
+    Print(ViewString(stz));
+  od;
 end);
 
 # TIETZE TRANSFORMATION 1: INTERNAL: ADD REDUNDANT RELATION - NO CHECK
@@ -838,7 +862,7 @@ SEMIGROUPS.StzFrequentSubwordCheck := function(stz)
       od;
     od;
   od;
-  return rec(reductions := Length(stz) - best_gain,
+  return rec(reduction := Length(stz) - best_gain,
              word := best_word);
 end;
 
@@ -863,32 +887,45 @@ SEMIGROUPS.StzFrequentSubwordApply := function(stz, metadata)
 
   # finally, remove the original relations.
   for i in [1 .. n] do
-    SEMIGROUPS.TietzeTransformation2(stz, i);
+    SEMIGROUPS.TietzeTransformation2(stz, 1);
   od;
   return;
 end;
 
 SEMIGROUPS.StzCheckSubstituteInstancesOfRelation := function(stz, relIndex)
-  local len, newLen, numInstances, rel, relToReplace, relLenDiff;
-  rel := RelationsOfStzPresentation(stz)[relIndex];
-  relToReplace := Maximum(rel);
+  local len, newLen, numInstances, rel, relLenDiff;
+  rel := ShallowCopy(RelationsOfStzPresentation(stz)[relIndex]);
+  SortBy(rel, Length);
   len := Length(stz);
-  relLenDiff := Length(relToReplace) - Length(Minimum(rel));
-  numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, relToReplace);
+  relLenDiff := Length(rel[2]) - Length(rel[1]);
+  numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, rel[2]);
   newLen := len - numInstances * relLenDiff;
   return newLen;
+end;
+
+SEMIGROUPS.StzCheckAllRelsSubInstances := function(stz)
+  local rels, i, out;
+  rels := RelationsOfStzPresentation(stz);
+  out := [];
+  for i in [1 .. Length(rels)] do
+    Append(out, [SEMIGROUPS.StzCheckSubstituteInstancesOfRelation(stz, i)]);
+  od;
+  return rec(reduction := Minimum(out),
+              argument := Position(out, Minimum(out)));
 end;
 
 SEMIGROUPS.StzSubstituteInstancesOfRelation := function(stz, relIndex)
   local rels, rel, containsRel, subword, tempRelSide1, tempRelSide2, i, j,
         replaceWord;
   rels := RelationsOfStzPresentation(stz);
-  rel := rels[relIndex];
-  subword := Maximum(rel);
-  replaceWord := Minimum(rel);
+  rel := ShallowCopy(rels[relIndex]);
+  SortBy(rel, Length);
+  subword := rel[2];
+  replaceWord := rel[1];
   containsRel := PositionsProperty(rels,
-            x -> (PositionSublist(x[1], subword) <> fail and x[1] <> subword)
-              or (PositionSublist(x[2], subword) <> fail and x[2] <> subword));
+            x -> Position(rels, x) <> relIndex and
+              ((PositionSublist(x[1], subword) <> fail)
+              or (PositionSublist(x[2], subword) <> fail)));
   for i in containsRel do
     tempRelSide1 := ShallowCopy(rels[i][1]);
     tempRelSide2 := ShallowCopy(rels[i][2]);
@@ -908,19 +945,39 @@ SEMIGROUPS.StzSubstituteInstancesOfRelation := function(stz, relIndex)
   od;
 end;
 
+#####
+## TODO
+##
+#####
+# Change to check rels
 SEMIGROUPS.StzCheckRemoveRedundantGenerator := function(stz, gen)
-  local rel, rels, relReduce;
+  local rel, rels, numInstances, relLen, relPos, tempPositions, r;
   rels := RelationsOfStzPresentation(stz);
   for rel in rels do
-    if rel[1] = [gen] or rel[2] = [gen] then
-      relLen := Length(Maximum(rel));
-      numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, [gen]);
-      relReduce := SEMIGROUPS.StzCheckSubstituteInstancesOfRelation(stz,
-                                                          Position(rels, rel));
-      return relReduce - 1 - Length(rel[1]) - Length(rel[2]);
+    if (rel[1] = [gen] and (not (gen in rel[2]))) or 
+        (rel[2] = [gen] and (not (gen in rel[1]))) then
+      relPos := Position(rels, rel);
+      numInstances := 0;
+      for r in Concatenation([1 .. relPos - 1], [relPos + 1 .. Length(rels)]) do
+        tempPositions := Length(Positions(Concatenation(rels[r][1],rels[r][2]), gen));
+        numInstances := numInstances + tempPositions;
+      od;
+      return Length(stz) + (numInstances * (Maximum(List(rel, Length)) - 1)) - 1
+             - Length(rel[1]) - Length(rel[2]);
     fi;
   od;
   return Length(stz);
+end;
+
+SEMIGROUPS.StzCheckAllGensRedundant := function(stz)
+  local gens, out, i;
+  gens := [1 .. Length(GeneratorsOfStzPresentation(stz))];
+  out := [];
+  for i in gens do
+    Append(out, [SEMIGROUPS.StzCheckRemoveRedundantGenerator(stz, i)]);
+  od;
+  return rec(reduction := Minimum(out),
+              argument := Position(out, Minimum(out)));
 end;
 
 # Simple check to see if any relation is literally the same - verbatim - as
@@ -937,4 +994,65 @@ SEMIGROUPS.StzCheckRemoveDuplicateRelation := function(stz, relIndex)
     fi;
   od;
   return Length(stz);
+end;
+
+SEMIGROUPS.StzCheckAllRelsDuplicate := function(stz)
+  local rels, out, i;
+  rels := RelationsOfStzPresentation(stz);
+  out := [];
+  for i in [1 .. Length(rels)] do
+    Append(out, [SEMIGROUPS.StzCheckRemoveDuplicateRelation(stz, i)]);
+  od;
+  return rec(reduction := Minimum(out),
+              argument := Position(out, Minimum(out)));
+end;
+
+SEMIGROUPS.StzApplyRelsDuplicate := function(stz, args)
+  SEMIGROUPS.TietzeTransformation2(stz, args!.argument);
+end;
+
+SEMIGROUPS.StzApplyGensRedundant := function(stz, args)
+  SEMIGROUPS.TietzeTransformation4(stz, args!.argument);
+end;
+
+SEMIGROUPS.StzApplyAllRelsSubInstances := function(stz, args)
+  SEMIGROUPS.StzSubstituteInstancesOfRelation(stz, args!.argument);
+end;
+
+## Format to add a new reductioncheck:
+## Add a function that calculates the potential new length for a specific
+## instance - eg a specific relation, generator, subword, etc (StzCheck)
+## Add a function that applies the above to each possible instance (or some
+## possible instances), find the least length out of these and return a record
+## rec(reduction := *least length*, argument := *arguments needed to apply
+## reduction*) (StzCheckAll)
+## Add a final function that will apply the necessary Tietze transformations
+## given the arguments, which takes as parameters the record from the above
+## function (StzApply)
+## To the results list below, add a new list [StzApply, StzCheckAll]
+
+SEMIGROUPS.StzSimplifyOnce := function(stz)
+  local rels, gens, results, mins, len, func, args, genRedundant, result;
+  rels := RelationsOfStzPresentation(stz);
+  results := [[SEMIGROUPS.StzApplyGensRedundant,
+                SEMIGROUPS.StzCheckAllGensRedundant(stz)],
+              [SEMIGROUPS.StzApplyRelsDuplicate,
+                SEMIGROUPS.StzCheckAllRelsDuplicate(stz)],
+              [SEMIGROUPS.StzApplyAllRelsSubInstances,
+                SEMIGROUPS.StzCheckAllRelsSubInstances(stz)],
+              [SEMIGROUPS.StzFrequentSubwordApply,
+                SEMIGROUPS.StzFrequentSubwordCheck(stz)]];
+  len := Length(stz);
+  mins := List(results, x -> x[2].reduction);
+  if Minimum(mins) < len then
+    result := results[Position(mins, Minimum(mins))];
+    Print("\n");
+    Print(result);
+    Print("\n");
+    func := result[1];
+    args := result[2];
+    func(stz, args);
+    return true;
+  fi;
+  return false;
 end;
