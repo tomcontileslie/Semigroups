@@ -491,6 +491,10 @@ function(stz)
   # generators for a semigroup Tietze presentation.
   # We'd like patterns to be grouped, i.e. abab=(ab)^2 when displayed. To
   # do this we sneakily piggyback off display methods for the free semigroup.
+  if RelationsOfStzPresentation(stz) = [] then
+    Info(InfoWarning, 1, "There are no relations in the presentation <stz>");
+  fi;
+
   rels := RelationsOfStzPresentation(stz);
   f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
   gens := GeneratorsOfSemigroup(f);
@@ -503,6 +507,37 @@ function(stz)
                          PrintString(w1),
                          " = ",
                          PrintString(w2));
+    Info(InfoWarning, 1, out);
+  od;
+end);
+
+InstallMethod(StzPrintGenerators, "For an stz presentation",
+[IsStzPresentation],
+function(stz)
+  local flat, gens, out, rel, i;
+  # This function displays a list of generators and number of occurences
+  # of each
+
+  # warn if there are no generators in the list (not sure this could happen)
+  if GeneratorsOfStzPresentation(stz) = [] then
+    Info(InfoWarning, 1, "There are no generators in the presentation <stz>");
+  fi;
+
+  # create flat list of relations to count occurrences
+  flat := [];
+  for rel in RelationsOfStzPresentation(stz) do
+    Append(flat, rel);
+  od;
+
+  # enumerate and count generators
+  gens := GeneratorsOfStzPresentation(stz);
+  for i in [1 .. Length(gens)] do
+    out := Concatenation(PrintString(i),
+                         ".  ",
+                         gens[i],
+                         "  ",
+                         Number(flat, x -> x = i),
+                         " occurrences");
     Info(InfoWarning, 1, out);
   od;
 end);
