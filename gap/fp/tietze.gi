@@ -1,7 +1,5 @@
 SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
   local newRels, rel1, rel2, i;
-  # Using format of LetterRepAssocWord, can change
-  # Global variable eg STZ_GENS := 1, STZ_RELS := 2?
 
   newRels := List([1 .. Length(rels)], x -> []);
   for i in [1 .. Length(rels)] do
@@ -15,7 +13,24 @@ end;
 # Searches a single LetterRepAssocWord list and replace instances of subword
 # with newWord
 SEMIGROUPS.StzReplaceSubwordRel := function(letterRep, subword, newWord)
-    local out, pos, i;
+    local s, out, pos, i;
+    # DANGER: THIS FUNCTION IS RECURSIVE
+    # THE FOLLOWING CHECKS ENSURE NO-ONE IS USING IT FOR STUPID REASONS.
+    # There are two valid uses:
+    # 1. The word replacing the old one is strictly shorter, so recursively
+    #    subbing out all instances will terminate
+    # 2. The old word is getting replaced by a word containing none of the
+    #    same letters (so there will be no chance to apply the function again)
+    if not Length(subword) > Length(newWord) then
+      s := Set(subword);
+      IntersectSet(s, newWord);
+      # s now contains all common letters, require that there are none
+      if not Length(s) = 0 then
+        Error("SEMIGROUPS.StzReplaceSubwordRel: substitution should be\n",
+              "guaranteed to terminate");
+      fi;
+    fi;
+
     out := [];
     pos := PositionSublist(letterRep, subword);
     if pos <> fail then
@@ -547,10 +562,11 @@ function(stz)
     Info(InfoWarning, 1, "There are no generators in the presentation <stz>");
   fi;
 
-  # create flat list of relations to count occurrences
+  # create flat flat list of relations to count occurrences
   flat := [];
   for rel in RelationsOfStzPresentation(stz) do
-    Append(flat, rel);
+    Append(flat, rel[1]);
+    Append(flat, rel[2]);
   od;
 
   # enumerate and count generators
@@ -560,7 +576,7 @@ function(stz)
                          ".  ",
                          gens[i],
                          "  ",
-                         Number(flat, x -> x = i),
+                         PrintString(Number(flat, x -> x = i)),
                          " occurrences");
     Info(InfoWarning, 1, out);
   od;
