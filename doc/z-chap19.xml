@@ -1,75 +1,121 @@
-<Chapter Label = "Visualising semigroups and elements">
+<Chapter Label = "Finitely presented semigroups and tietze transformations">
   <Heading>
-    Visualising semigroups and elements
+    Finitely presented semigroups and tietze transformations
   </Heading>
 
-  There are two operations <Ref Oper = "TikzString"/> and <Ref Oper =
-    "DotString"/> in &Semigroups; for creating &LaTeX; and <C>dot</C> (also
-  known as GraphViz) format pictures of the Green's class structure of a
-  semigroup and for visualising certain types of elements of a semigroup. There
-  is also a function <Ref Func = "Splash" BookName = "Digraphs"/> for
-  automatically processing the output of <Ref Oper = "TikzString"/> and <Ref
-    Oper = "DotString"/> and opening the resulting pdf file.
+  In this chapter we describe the functions implemented in &Semigroups; that
+  extend the features available in &GAP; for dealing with finitely presented
+  semigroups.
 
-  <!--**********************************************************************-->
-  <!--**********************************************************************-->
+  <P/>
+  
+  Section
+  <Ref Sect="Words and strings in finitely presented semigroups"
+       Style="Number"/>
+  (written by Maria Tsalakou and Murray Whyte) and Section
+  <Ref Sect="Helper functions for creating semigroup and monoid presentations"
+       Style="Number"/>
+  (written by Luke Elliott)
+  demonstrate a number of helper functions that allow the user to convert
+  between different representations of words and relations.
 
-  <Section>
+  <P/>
 
-    <Heading>
-      <C>dot</C> pictures
-    </Heading>
-
-    In this section, we describe the operations in &Semigroups; for creating
-    pictures in <C>dot</C> format.
-    <P/>
+  In the later sections, written and implemented by Ben Spiers and Tom
+  Conti-Leslie, we describe how to change the relations of a finitely presented
+  semigroup either manually or automatically using "Semigroup Tietze" ("Stz")
+  transformations.
+  <P/>
  
-    The operations described in this section return strings, which
-    can be written to a file using the function <Ref Func = "FileString"
-      BookName = "GAPDoc"/> or viewed using <Ref Func = "Splash" BookName =
-      "Digraphs"/>.
-
-    <#Include Label = "DotString"/>
-    <#Include Label = "DotStringDigraph"/>
-    <#Include Label = "DotSemilatticeOfIdempotents"/>
-    <#Include Label = "DotLeftCayleyDigraph">
-
-  </Section>
- 
-  <!--**********************************************************************-->
-  <!--**********************************************************************-->
-
-  <Section>
-    <Heading>
-      <C>tex</C> output
+  <Section Label="Words and strings in finitely presented semigroups">
+    <Heading> Words and strings in finitely presented semigroups
     </Heading>
-    In this section, we describe the operations in &Semigroups; for creating
-    &LaTeX; representations of &GAP; objects. For pictures of &GAP; objects
-    please see Section <Ref Sect="tikz pictures"/>. 
+    This section contains various methods for dealing with words, which for
+    these purposes are lists of positive integers.
 
-    <#Include Label = "TexString">
+    <#Include Label = "WordToString" >
+    <#Include Label = "RandomWord" >
+    <#Include Label = "StandardiseWord" >
+    <#Include Label = "StringToWord" >
   </Section>
 
-  <!--**********************************************************************-->
-  <!--**********************************************************************-->
-
-  <Section Label="tikz pictures">
-    <Heading>
-      <C>tikz</C> pictures
+  <Section
+   Label="Helper functions for creating semigroup and monoid presentations">
+    <Heading> Helper functions for creating semigroup and monoid presentations
     </Heading>
+    This section describes operations implemented in &Semigroups; that are
+    designed to interact with standard &GAP; methods for creating finitely
+    presented semigroups and monoids (see <Ref
+    Chap="Finitely Presented Semigroups and Monoids"
+    BookName="ref"/>).
 
-    In this section, we describe the operations in &Semigroups; for creating
-    pictures in <C>tikz</C> format.
+    <#Include Label = "ParseRelations">
+  </Section>
+
+  <Section Label="Creating semigroup presentations">
+    <Heading>
+      Creating semigroup presentations
+    </Heading>
+    It is possible to use &GAP; to create finitely presented semigroups without
+    the &Semigroups; package, by creating a free semigroup, then
+    quotienting by a list of relations. This is described in the reference
+    manual
+    (<Ref Chap="Finitely Presented Semigroups and Monoids" BookName="ref"/>).
+
     <P/>
 
-    The functions described in this section return a string, which can be
-    written to a file using the function <Ref Func = "FileString"
-      BookName = "GAPDoc"/> or viewed using <Ref Func = "Splash" BookName =
-      "Digraph"/>.
+    However, finitely presented semigroups do not allow for their relations to
+    be simplified, so in the following sections, we describe how to create and
+    modify the "Semigroup Tietze" object associated with an fp semigroup.
+    This object can be automatically simplified, or the user can manually apply
+    Tietze transformations to add or remove relations or generators in the
+    presentation.
 
-    <#Include Label = "TikzString">
-    <#Include Label = "TikzLeftCayleyDigraph">
+    <P/>
 
+    This object is analogous to the "Tietze object" implemented for fp groups
+    in the main &GAP; distribution
+    (<Ref Chap="Presentations and Tietze Transformations" BookName="ref"/>),
+    but its features are semigroup-specific. All of the functions used to
+    create, view and manipulate Semigroup Tietze objects are prefixed with
+    "Stz".
+
+    <#Include Label = "StzPresentation">
+    <#Include Label = "IsStzPresentation">
+    MORE FUNCTIONS TO COME: Generators/RelationsOfStzPresentation;
+    UnreducedSemigroupOf... etc
   </Section>
 
+  <Section Label = "Printing presentations">
+    <Heading>
+      Printing presentations
+    </Heading>
+    Content to include here: StzPrintRelation, StzPrintRelations,
+    etc. Same for generators.
+  </Section>
+
+  <Section Label = "Changing presentations">
+    <Heading>
+      Changing presentations
+    </Heading>
+    Content to include here: Tietze Transformations 1 to 4
+    (with and without checks, with all sorts of different kinds
+    of arguments, etc)
+  </Section>
+
+  <Section Label = "Converting a modified presentation into a semigroup">
+    <Heading>
+      Converting a modified presentation into a semigroup
+    </Heading>
+    Content to include here: TietzeIsomorphism mainly; maybe some stuff on the
+    forward and backward maps; also StzPrintGeneratorImages
+  </Section>
+
+  <Section Label = "Automatically simplifying a presentation">
+    <Heading>
+      Automatically simplifying a presentation
+    </Heading>
+    Content to include here: StzSimplifyOnce, StzSimplifyPresentation, and then
+    also direct methods on semigroups (SimplifiedFpSemigroup etc)
+  </Section>
 </Chapter>
