@@ -82,5 +82,40 @@
 
     <#Include Label = "StzPresentation">
     <#Include Label = "IsStzPresentation">
+    MORE FUNCTIONS TO COME: Generators/RelationsOfStzPresentation;
+    UnreducedSemigroupOf... etc
+  </Section>
+
+  <Section Label = "Printing presentations">
+    <Heading>
+      Printing presentations
+    </Heading>
+    Content to include here: StzPrintRelation, StzPrintRelations,
+    etc. Same for generators.
+  </Section>
+
+  <Section Label = "Changing presentations">
+    <Heading>
+      Changing presentations
+    </Heading>
+    Content to include here: Tietze Transformations 1 to 4
+    (with and without checks, with all sorts of different kinds
+    of arguments, etc)
+  </Section>
+
+  <Section Label = "Converting a modified presentation into a semigroup">
+    <Heading>
+      Converting a modified presentation into a semigroup
+    </Heading>
+    Content to include here: TietzeIsomorphism mainly; maybe some stuff on the
+    forward and backward maps; also StzPrintGeneratorImages
+  </Section>
+
+  <Section Label = "Automatically simplifying a presentation">
+    <Heading>
+      Automatically simplifying a presentation
+    </Heading>
+    Content to include here: StzSimplifyOnce, StzSimplifyPresentation, and then
+    also direct methods on semigroups (SimplifiedFpSemigroup etc)
   </Section>
 </Chapter>
