@@ -10,48 +10,31 @@ SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
   return newRels;
 end;
 
-# Searches a single LetterRepAssocWord list and replace instances of subword
-# with newWord
-SEMIGROUPS.StzReplaceSubwordRel := function(letterRep, subword, newWord)
-    local s, out, pos, i;
-    # DANGER: THIS FUNCTION IS RECURSIVE
-    # THE FOLLOWING CHECKS ENSURE NO-ONE IS USING IT FOR STUPID REASONS.
-    # There are two valid uses:
-    # 1. The word replacing the old one is strictly shorter, so recursively
-    #    subbing out all instances will terminate
-    # 2. The old word is getting replaced by a word containing none of the
-    #    same letters (so there will be no chance to apply the function again)
-    if not Length(subword) > Length(newWord) then
-      s := Set(subword);
-      IntersectSet(s, newWord);
-      # s now contains all common letters, require that there are none
-      if not Length(s) = 0 then
-        Error("SEMIGROUPS.StzReplaceSubwordRel: substitution should be\n",
-              "guaranteed to terminate");
-      fi;
-    fi;
+SEMIGROUPS.StzReplaceSubwordRel := function(word, subword, newWord)
+  local out, k, l, i;
+  # Searches a single LetterRepAssocWord list and replaces instances of
+  # subword with newWord.
 
-    out := [];
-    pos := PositionSublist(letterRep, subword);
-    if pos <> fail then
-        for i in [1 .. pos - 1] do
-            Append(out, [letterRep[i]]);
-        od;
-        for i in [1 .. Length(newWord)] do
-            Append(out, [newWord[i]]);
-        od;
-        for i in [pos + Length(subword) .. Length(letterRep)] do
-            Append(out, [letterRep[i]]);
-        od;
-        pos := PositionSublist(out, subword);
-        if pos <> fail then
-            return SEMIGROUPS.StzReplaceSubwordRel(out, subword, newWord);
-        else
-            return out;
-        fi;
+  # build word up as we read through the old word.
+  out := [];
+  k   := Length(subword);
+  l   := Length(word);
+  i   := 1;  # current index that we are looking at when trying to see subword
+  while i <= l do
+    if word{[i .. Minimum(i + k - 1, l)]} = subword then
+      # in this, case the word starting at i needs to be substituted out.
+      # (the minimum is there to make sure we don't fall off the end of word)
+      Append(out, newWord);
+      # jump to end of occurrence
+      i := i + k;
     else
-        return letterRep;
+      # move over by one and append the original letter, since the word is not
+      # seen here.
+      Add(out, word[i]);
+      i := i + 1;
     fi;
+  od;
+  return out;
 end;
 
 # takes in a letterrep word and replaces every letter with its expression in
