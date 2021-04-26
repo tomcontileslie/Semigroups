@@ -1141,6 +1141,3 @@ function(stz)
   fi;
   return false;
 end);
-
-F := FreeSemigroup(3);
-S := F/[[F.1^4,F.1],[F.1,F.1^44],[F.1^8,F.2*F.3]];
