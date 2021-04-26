@@ -1,7 +1,5 @@
 SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
   local newRels, rel1, rel2, i;
-  # Using format of LetterRepAssocWord, can change
-  # Global variable eg STZ_GENS := 1, STZ_RELS := 2?
 
   newRels := List([1 .. Length(rels)], x -> []);
   for i in [1 .. Length(rels)] do
@@ -12,26 +10,31 @@ SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
   return newRels;
 end;
 
-# Searches a single LetterRepAssocWord list and replace instances of subword
-# with newWord
-SEMIGROUPS.StzReplaceSubwordRel := function(letterRep, subword, newWord)
-    local out, pos, i;
-    out := [];
-    pos := PositionSublist(letterRep, subword);
-    if pos <> fail then
-      for i in [1 .. pos - 1] do
-          Append(out, [letterRep[i]]);
-      od;
-      for i in [1 .. Length(newWord)] do
-          Append(out, [newWord[i]]);
-      od;
-      for i in [pos + Length(subword) .. Length(letterRep)] do
-          Append(out, [letterRep[i]]);
-      od;
-      return out;
+SEMIGROUPS.StzReplaceSubwordRel := function(word, subword, newWord)
+  local out, k, l, i;
+  # Searches a single LetterRepAssocWord list and replaces instances of
+  # subword with newWord.
+
+  # build word up as we read through the old word.
+  out := [];
+  k   := Length(subword);
+  l   := Length(word);
+  i   := 1;  # current index that we are looking at when trying to see subword
+  while i <= l do
+    if word{[i .. Minimum(i + k - 1, l)]} = subword then
+      # in this, case the word starting at i needs to be substituted out.
+      # (the minimum is there to make sure we don't fall off the end of word)
+      Append(out, newWord);
+      # jump to end of occurrence
+      i := i + k;
     else
-      return letterRep;
+      # move over by one and append the original letter, since the word is not
+      # seen here.
+      Add(out, word[i]);
+      i := i + 1;
     fi;
+  od;
+  return out;
 end;
 
 # takes in a letterrep word and replaces every letter with its expression in
@@ -583,10 +586,11 @@ function(stz)
     Info(InfoWarning, 1, "There are no generators in the presentation <stz>");
   fi;
 
-  # create flat list of relations to count occurrences
+  # create flat flat list of relations to count occurrences
   flat := [];
   for rel in RelationsOfStzPresentation(stz) do
-    Append(flat, rel);
+    Append(flat, rel[1]);
+    Append(flat, rel[2]);
   od;
 
   # enumerate and count generators
@@ -596,7 +600,7 @@ function(stz)
                          ".  ",
                          gens[i],
                          "  ",
-                         Number(flat, x -> x = i),
+                         PrintString(Number(flat, x -> x = i)),
                          " occurrences");
     Info(InfoWarning, 1, out);
   od;
