@@ -48,8 +48,8 @@ DeclareOperation("TietzeForwardMapReplaceSubword", [IsStzPresentation, IsList, I
 DeclareOperation("StzSimplifyOnce", [IsStzPresentation]);
 DeclareOperation("StzSimplifyPresentation", [IsStzPresentation]);
 
-DeclareOperation("SimplifiedFpPresentation", [IsFpSemigroup]);
-DeclareOperation("SimplifyFpPresentation", [IsFpSemigroup]);
+DeclareOperation("SimplifiedFpSemigroup", [IsFpSemigroup]);
+DeclareOperation("SimplifyFpSemigroup", [IsFpSemigroup]);
 
 # FP semigroup attributes
 DeclareAttribute("UnreducedFpSemigroupOfFpSemigroup", IsFpSemigroup);
