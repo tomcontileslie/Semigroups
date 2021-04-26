@@ -57,10 +57,22 @@ DeclareAttribute("FpTietzeIsomorphism", IsFpSemigroup);
 
 DeclareOperation("TietzeIsomorphism", [IsStzPresentation]);
 
+## Tietze Transformations - various implementations
+# Tietze 1 (add relation)
 DeclareOperation("StzAddRelation", [IsStzPresentation, IsList]);
-DeclareOperation("StzRemoveRelation", [IsStzPresentation, IsPosInt]);
 DeclareOperation("StzAddRelationNC", [IsStzPresentation, IsList]);
+# Tietze 2 (remove relation)
+DeclareOperation("StzRemoveRelation", [IsStzPresentation, IsPosInt]);
 DeclareOperation("StzRemoveRelationNC", [IsStzPresentation, IsPosInt]);
+# Tietze 3 (add generator)
+DeclareOperation("StzAddGenerator", [IsStzPresentation, IsList]);
+DeclareOperation("StzAddGenerator", [IsStzPresentation,
+                                     IsElementOfFpSemigroup]);
+DeclareOperation("StzAddGenerator", [IsStzPresentation, IsList, IsString]);
+DeclareOperation("StzAddGenerator", [IsStzPresentation,
+                                     IsElementOfFpSemigroup,
+                                     IsString]);
+
 
 DeclareOperation("StzPrintRelations", [IsStzPresentation]);
 DeclareOperation("StzPrintRelation", [IsStzPresentation, IsPosInt]);

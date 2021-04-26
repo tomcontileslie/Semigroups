@@ -128,22 +128,23 @@ end;
 InstallMethod(StzPresentation, "for a finitely presented semigroup",
 [IsFpSemigroup],
 function(S)
-  local out, rels, type;
+  local gens, out, rels, type;
 
   type := NewType(NewFamily("StzFamily", IsStzPresentation),
                   IsStzPresentation and IsComponentObjectRep);
 
   rels := List(RelationsOfFpSemigroup(S),
               x -> [LetterRepAssocWord(x[1]), LetterRepAssocWord(x[2])]);
+  gens := List(GeneratorsOfSemigroup(S), x -> ViewString(x));
 
-  out := rec(gens               := List(GeneratorsOfSemigroup(S),
-                                        x -> ViewString(x)),
+  out := rec(gens               := gens,
              rels               := rels,
              unreducedSemigroup := S,
              tietzeForwardMap   := List([1 .. Length(GeneratorsOfSemigroup(S))],
                                         x -> [x]),
              tietzeBackwardMap  := List([1 .. Length(GeneratorsOfSemigroup(S))],
-                                        x -> [x]));
+                                        x -> [x]),
+             usedGens           := Set(gens));
 
   return ObjectifyWithAttributes(out, type,
                                   RelationsOfStzPresentation,
@@ -384,45 +385,99 @@ end);
 # TIETZE TRANSFORMATION 1: INTERNAL: ADD REDUNDANT RELATION - NO CHECK
 SEMIGROUPS.TietzeTransformation1 := function(stz, pair)
   local rels_copy;
-  rels_copy := ShallowCopy(stz!.rels);
+  # Arguments:
+  # - <stz> should be a Semigroup Tietze (IsStzPresentation) object.
+  # - <pair> should be a list containing two LetterRep words.
+  #
+  # This function returns nothing, and modifies <stz> in place by adding a new
+  # relation given by <pair>. This relation is assumed to be redundant based
+  # on the relations already present in RelationsOfStzPresentation(<stz>)
+  # (although this is not checked).
+  #
+  # WARNING: this is an internal function and performs only minimal argument
+  # checks. Entering arguments in the wrong format may result in errors that
+  # are difficult to interpret. Argument checks are carried out in the
+  # analogous, documented function: StzAddRelation. However, these checks
+  # may not terminate in some cases.
+
+  # Add relation
+  rels_copy := ShallowCopy(RelationsOfStzPresentation(stz));
   Add(rels_copy, pair);
   stz!.rels := rels_copy;
   return;
 end;
 
 # TIETZE TRANSFORMATION 2: INTERNAL: REMOVE REDUNDANT RELATION - NO CHECK
-# TODO will this work on stz = rec(gens:=[a], rels:=[[a,a]])?
 SEMIGROUPS.TietzeTransformation2 := function(stz, index)
-  local rels;
-  rels := ShallowCopy(RelationsOfStzPresentation(stz));
-  Remove(rels, index);
-  stz!.rels := rels;
+  local rels_copy;
+  # Arguments:
+  # - <stz> should be a Semigroup Tietze (IsStzPresentation) object.
+  # - <index> should be the index of the relation in
+  #   RelationsOfStzPresentation(<stz>) that needs to be removed.
+  #
+  # This function returns nothing, and modifies <stz> in place by removing
+  # relation number <index>, assumed to be redundant (though redundancy of
+  # that relation is not checked).
+  #
+  # WARNING: this is an internal function and performs only minimal argument
+  # checks. Entering arguments in the wrong format may result in errors that
+  # are difficult to interpret. Argument checks are carried out in the
+  # analogous, documented function: StzRemoveRelation. However, these checks
+  # may not terminate in some cases.
+
+  # Remove relation
+  rels_copy := ShallowCopy(RelationsOfStzPresentation(stz));
+  Remove(rels_copy, index);
+  stz!.rels := rels_copy;
 end;
 
-# TIETZE TRANSFORMATION 3: ADD NEW GENERATOR
-SEMIGROUPS.TietzeTransformation3 := function(stz, word)
+# TIETZE TRANSFORMATION 3: INTERNAL: ADD NEW GENERATOR - NO CHECK
+SEMIGROUPS.TietzeTransformation3 := function(stz, word, name)
   local new_gens, new_rels, back_word, new_maps, letter;
   # Arguments:
-  # - <stz> should be a Semigroup Tietze object.
-  # - <word> should be a LetterRep word
+  # - <stz> should be a Semigroup Tietze (IsStzPresentation) object.
+  # - <word> should be a LetterRep word.
+  # - <name> should be a string, or fail.
   #
-  # Returns:
-  # - nothing, and modifies <stz> in place by adding the relation gen=word,
-  #   if the input is reasonable.
-  # - ErrorNoReturn if the generator number already exists in stz.
-
-  # TODO could be custom specification of what generator string should be
-  # TODO argument checks
+  # This function returns nothing, and modifies <stz> in place by adding a new
+  # generator and the relation gen = <word>.
+  # The name for the new generator is <name>, unless this argument is fail,
+  # in which case the name is automatically generated using
+  # SEMIGROUPS.NewGeneratorName.
+  # This function also updates the Tietze backwards map so that the new
+  # generator can be expressed as a word on the generators of the original
+  # semigroup.
+  #
+  # WARNING: this is an internal function and performs only minimal argument
+  # checks. Entering arguments in the wrong format may result in errors that
+  # are difficult to interpret. Argument checks are carried out in the
+  # analogous, documented function: StzAddGenerator.
 
   # Add new generator string to the list of gens in similar format
   new_gens := ShallowCopy(stz!.gens);
   new_rels := ShallowCopy(stz!.rels);
-  Add(new_gens, SEMIGROUPS.NewGeneratorName(stz!.gens));
+  if name = fail or name in stz!.gens then
+    # either name was not specified, or it was but is already a generator.
+    # generate a new generator name, as of yet unused.
+    Add(new_gens, SEMIGROUPS.NewGeneratorName(List(stz!.usedGens)));
+  else
+    # this must mean the argument is a string as of yet unused, so add that
+    Add(new_gens, ShallowCopy(name));
+  fi;
+
+  # in either case we have added a new generator: for cosmetic reasons,
+  # prohibit that generator name from being auto-used again (in case we delete
+  # it)
+  UniteSet(stz!.usedGens, new_gens);
+
+  # Add relation setting new gen equal to <word>
   Add(new_rels, [word, [Length(stz!.gens) + 1]]);
+
+  # Update internal representation of the stz object
   SetGeneratorsOfStzPresentation(stz, new_gens);
   SetRelationsOfStzPresentation(stz, new_rels);
 
-  # Now we need to update the backwards maps to express the new generator in
+  # Now we need to update the backwards map to express the new generator in
   # terms of the original generators.
   back_word := [];
   new_maps  := ShallowCopy(TietzeBackwardMap(stz));
@@ -437,57 +492,57 @@ end;
 SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   local found_expr, expr, index, decrement, tempMaps, tempRels, tempGens, i;
   # Arguments:
-  # - <stz> should be a Semigroup Tietze object.
-  # - <gen> should be a pos int (number of generator to be removed)
+  # - <stz> should be a Semigroup Tietze (IsStzPresentation) object.
+  # - <gen> should be a pos int.
   #
-  # Returns:
-  # - nothing, and modifies <stz> in place by removing generator number <gen>,
-  #   if this function can find an expression for that generator as a product
-  #   of some combination of other generators.
-  # - ErrorNoReturn if this is impossible.
-
-  # TODO probably very reasonable to have a NC version where where you specify
-  # generator number and word to replace it with, and it just does it without
-  # asking.
-
-  # TODO also an intermediate implementation is to have a method for this
-  # function which takes in three arguments stz, gen, word and subs word for gen
-  # IF it can verify that [gen] = word in stz.
+  # This function returns nothing, and modifies <stz> in place by removing
+  # generator number <gen>. This can only happen if a relation of the form
+  # [<gen>] = *some word not including <gen>* is present in the relation list.
+  # In this case, every occurrence of the generator <gen> is replaced with
+  # a copy of the word that <gen> is equal to.
+  # If such a relation for <gen> cannot be found, this function throws
+  # ErrorNoReturn.
+  # This function also updates the Tietze forward map, so that any generator
+  # in the original semigroup expressed as a combination of generators
+  # including <gen> is now represented without using <gen> (since <gen>
+  # has been removed).
+  #
+  # WARNING: this is an internal function and performs only minimal argument
+  # checks. Entering arguments in the wrong format may result in errors that
+  # are difficult to interpret. Argument checks are carried out in the
+  # analogous, documented function: StzRemoveGenerator.
 
   # argument checks
   if Length(stz!.gens) = 1 then
-    ErrorNoReturn("cannot remove only remaining generator",
-                  ViewString(stz!.gens[1]));
+    ErrorNoReturn("cannot remove only remaining generator \"",
+                  stz!.gens[1],
+                  "\"");
   fi;
   if gen > Length(stz!.gens) then
     ErrorNoReturn("second argument must be no greater than the total\n",
                   "number of generators");
   fi;
 
-  # find expression for gen
-  # TODO this can be less lazy than just looking for an explicit relation
-  # NOTE: on the above todo, in fairness we could implement only lazy checking
-  # and get the user to add a reduandant relation using Tietze 1, then apply
-  # Tietze 4.
+  # check we can express <gen> using only other generators
   found_expr := false;
   for i in [1 .. Length(stz!.rels)] do
     if stz!.rels[i][1] = [gen] and not gen in stz!.rels[i][2] then
       found_expr := true;
-      expr       := ShallowCopy(stz!.rels[i][2]);  # TODO necessary?
+      expr       := stz!.rels[i][2];
       index      := i;
       break;
     elif stz!.rels[i][2] = [gen] and not gen in stz!.rels[i][1] then
       found_expr := true;
-      expr       := ShallowCopy(stz!.rels[i][1]);  # TODO necessary?
+      expr       := stz!.rels[i][1];
       index      := i;
       break;
     fi;
   od;
 
-  # check we found one
+  # check we found an expression for <gen>. If not, nothing can be done.
   if not found_expr then
-    ErrorNoReturn("no explicit relation expressing second argument as a\n",
-                  "combination of other generators");
+    ErrorNoReturn("TietzeTransformation4: no explicit relation expressing\n",
+                  "second argument as a combination of other generators");
   fi;
 
   # Define decrement function to bump down generator numbers past the one
@@ -501,6 +556,7 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   end;
 
   # update forward mapping component
+  # TODO: do we really need TietzeForwardMapReplaceSubword?
   TietzeForwardMapReplaceSubword(stz, [gen], expr);
   tempMaps := ShallowCopy(TietzeForwardMap(stz));
   Apply(tempMaps, x -> List(x, decrement));
@@ -512,7 +568,6 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   SetTietzeBackwardMap(stz, tempMaps);
 
   # sub in expression we found and remove relation we used for gen
-  # TODO stop the middle man ext rep conversion
   tempRels := ShallowCopy(RelationsOfStzPresentation(stz));
   Remove(tempRels, index);
   tempRels := SEMIGROUPS.StzReplaceSubword(tempRels, [gen], expr);
@@ -821,6 +876,101 @@ function(stz, index)
   return;
 end);
 
+### TIETZE 3
+InstallMethod(StzAddGenerator,
+"For an stz presentation and a LetterRep word",
+[IsStzPresentation, IsList],
+function(stz, word)
+  local n, letter;
+  # argument checks
+  n := Length(GeneratorsOfStzPresentation(stz));
+  for letter in word do
+    if not (IsPosInt(letter) and letter <= n) then
+      # the argument has not been entered as a list of pos ints. Pass off to
+      # potential future methods for Tietze3, but this is likely to be a
+      # mistake.
+      Info(InfoWarning, 1, "StzAddGenerator: second argument <word> is not a\n",
+                           "list of pos ints at most equal to the number of\n",
+                           "generators of the first argument. Likely error.\n",
+                           "Trying other methods...");
+      TryNextMethod();
+    fi;
+  od;
+
+  # at this point all is good, so request new generator to be added with
+  # a new generator name auto-created.
+  SEMIGROUPS.TietzeTransformation3(stz, word, fail);
+end);
+
+InstallMethod(StzAddGenerator,
+"For an stz presentation and a fp semigroup element",
+[IsStzPresentation, IsElementOfFpSemigroup],
+function(stz, word)
+  local letterrepword;
+  # argument check: word should be an element of the unreduced semigroup
+  # (that way we can express it as a word on the current tietze generators)
+  if not word in UnreducedSemigroupOfStzPresentation(stz) then
+    TryNextMethod();
+  fi;
+
+  # if we do have an element of s, use the forward map to express it as a word
+  # on the current generators, then run the original implementation of Tietze 3.
+  letterrepword := SEMIGROUPS.StzExpandWord(
+                     LetterRepAssocWord(UnderlyingElement(word)),
+                     TietzeForwardMap(stz));
+  StzAddGenerator(stz, letterrepword);
+end);
+
+### TIETZE 3 (with specified new generator name)
+InstallMethod(StzAddGenerator,
+"For an stz presentation, a LetterRep word and a string",
+[IsStzPresentation, IsList, IsString],
+function(stz, word, name)
+  local n, letter;
+  # argument check 1: word is a valid word
+  n := Length(GeneratorsOfStzPresentation(stz));
+  for letter in word do
+    if not (IsPosInt(letter) and letter <= n) then
+      # the argument has not been entered as a list of pos ints. Pass off to
+      # potential future methods for Tietze3, but this is likely to be a
+      # mistake.
+      Info(InfoWarning, 1, "StzAddGenerator: second argument <word> is not a\n",
+                           "list of pos ints at most equal to the number of\n",
+                           "generators of the first argument. Likely error.\n",
+                           "Trying other methods...");
+      TryNextMethod();
+    fi;
+  od;
+
+  # argument check 2: requested generator name not yet used
+  if name in GeneratorsOfStzPresentation(stz) then
+    ErrorNoReturn("StzAddGenerator: third argument <name> should not be the\n",
+                  "name of a pre-existing generator");
+  fi;
+
+  # otherwise we are all good
+  SEMIGROUPS.TietzeTransformation3(stz, word, name);
+end);
+
+InstallMethod(StzAddGenerator,
+"For an stz presentation, a fp semigroup element and a string",
+[IsStzPresentation, IsElementOfFpSemigroup, IsString],
+function(stz, word, name)
+  local letterrepword;
+  # argument check: word should be an element of the unreduced semigroup
+  # (that way we can express it as a word on the current tietze generators)
+  if not word in UnreducedSemigroupOfStzPresentation(stz) then
+    TryNextMethod();
+  fi;
+
+  # if we do have an element of s, use the forward map to express it as a word
+  # on the current generators, then run the original implementation of Tietze 3.
+  letterrepword := SEMIGROUPS.StzExpandWord(
+                     LetterRepAssocWord(UnderlyingElement(word)),
+                     TietzeForwardMap(stz));
+  StzAddGenerator(stz, letterrepword, name);
+end);
+
 SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
   local count, relSide, rel, rels, pos, len, relSideCopy;
   rels := RelationsOfStzPresentation(stz);
@@ -913,7 +1063,7 @@ SEMIGROUPS.StzFrequentSubwordApply := function(stz, metadata)
   k    := Length(gens);
 
   # first, add new generator.
-  SEMIGROUPS.TietzeTransformation3(stz, word);
+  SEMIGROUPS.TietzeTransformation3(stz, word, fail);
 
   # then, go through and add loads of relations which are the old ones but
   # with the old word subbed out.
