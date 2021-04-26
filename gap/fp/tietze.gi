@@ -528,7 +528,7 @@ end;
 InstallMethod(StzPrintRelation, "for an stz presentation,",
 [IsStzPresentation, IsPosInt],
 function(stz, i)
-  local str, rels, f, gens;
+  local str, rels, f, gens, w1, w2, out;
   rels := RelationsOfStzPresentation(stz);
   if i > Length(rels) then
     return fail;
@@ -926,7 +926,6 @@ SEMIGROUPS.StzFrequentSubwordApply := function(stz, metadata)
   for i in [1 .. n] do
     SEMIGROUPS.TietzeTransformation2(stz, 1);
   od;
-  Print()
   return;
 end;
 
@@ -987,19 +986,21 @@ end;
 ## TODO
 ##
 #####
-# Change to check rels
+# Rewrite for 3 different paths
 SEMIGROUPS.StzRedundantGeneratorCheck := function(stz)
   local rel, rels, numInstances, relLen, relPos, tempPositions, r, out, redLen,
-        min, arg;
+        min, arg, tempRel;
   rels := RelationsOfStzPresentation(stz);
   out := [];
   for rel in rels do
     if (Length(rel[1]) = 1 and (not (rel[1][1] in rel[2]))) or 
         (Length(rel[2]) = 1 and (not (rel[2][1] in rel[1]))) then
+      tempRel := ShallowCopy(rel);
+      SortBy(tempRel, Length);
       relPos := Position(rels, rel);
       numInstances := 0;
       for r in Concatenation([1 .. relPos - 1], [relPos + 1 .. Length(rels)]) do
-        tempPositions := Length(Positions(Concatenation(rels[r][1],rels[r][2]), gen));
+        tempPositions := Length(Positions(Concatenation(rels[r][1],rels[r][2]), tempRel[1][1]));
         numInstances := numInstances + tempPositions;
       od;
       redLen := Length(stz) + (numInstances * (Maximum(List(rel, Length)) - 1))
@@ -1007,9 +1008,12 @@ SEMIGROUPS.StzRedundantGeneratorCheck := function(stz)
       Append(out, [redLen]);
     else
       Append(out, [Length(stz)]);
+    fi;
   od;
   min := Minimum(out);
-  arg := SortBy(ShallowCopy(rels[Position(out, min)]), Length)[1][1];
+  arg := ShallowCopy(rels[Position(out, min)]);
+  SortBy(arg, Length);
+  arg := arg[1][1];
   return rec(reduction := Minimum(out),
               argument := arg);
 end;
@@ -1071,7 +1075,7 @@ end;
 SEMIGROUPS.StzTrivialRelationApply := function(stz, args)
   local str;
   str := "<Removing trivial relation: ";
-  Append(str, StzPrintRelation(RelationsOfStzPresentation(stz)[args.argument]));
+  Append(str, StzPrintRelation(stz, args.argument));
   Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
   SEMIGROUPS.TietzeTransformation2(stz, args.argument);
@@ -1080,7 +1084,7 @@ end;
 SEMIGROUPS.StzApplyRelsDuplicate := function(stz, args)
   local str;
   str := "<Removing duplicate relation: ";
-  Append(str, StzPrintRelation(RelationsOfStzPresentation(stz)[args.argument]));
+  Append(str, StzPrintRelation(stz, args.argument));
   Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
   SEMIGROUPS.TietzeTransformation2(stz, args.argument);
@@ -1114,7 +1118,7 @@ function(stz)
   local rels, gens, results, mins, len, func, args, result;
   rels := RelationsOfStzPresentation(stz);
   results := [[SEMIGROUPS.StzApplyGensRedundant,
-                SEMIGROUPS.SEMIGROUPS.StzRedundantGeneratorCheck(stz)],
+                SEMIGROUPS.StzRedundantGeneratorCheck(stz)],
               [SEMIGROUPS.StzApplyRelsDuplicate,
                 SEMIGROUPS.StzCheckAllRelsDuplicate(stz)],
               [SEMIGROUPS.StzApplyAllRelsSubInstances,
