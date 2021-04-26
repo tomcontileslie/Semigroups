@@ -45,12 +45,15 @@ DeclareOperation("SetTietzeBackwardMap", [IsStzPresentation, IsList]);
 
 DeclareOperation("TietzeForwardMapReplaceSubword", [IsStzPresentation, IsList, IsList]);
 
+DeclareOperation("StzSimplifyOnce", [IsStzPresentation]);
 DeclareOperation("StzSimplifyPresentation", [IsStzPresentation]);
+
+DeclareOperation("SimplifiedFpPresentation", [IsFpSemigroup]);
+DeclareOperation("SimplifyFpPresentation", [IsFpSemigroup]);
 
 # FP semigroup attributes
 DeclareAttribute("UnreducedFpSemigroupOfFpSemigroup", IsFpSemigroup);
-DeclareAttribute("TietzeForwardMap", IsFpSemigroup);
-DeclareAttribute("TietzeBackwardMap", IsFpSemigroup);
+DeclareAttribute("FpTietzeIsomorphism", IsFpSemigroup);
 
 DeclareOperation("TietzeIsomorphism", [IsStzPresentation]);
 

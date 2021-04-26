@@ -19,23 +19,18 @@ SEMIGROUPS.StzReplaceSubwordRel := function(letterRep, subword, newWord)
     out := [];
     pos := PositionSublist(letterRep, subword);
     if pos <> fail then
-        for i in [1 .. pos - 1] do
-            Append(out, [letterRep[i]]);
-        od;
-        for i in [1 .. Length(newWord)] do
-            Append(out, [newWord[i]]);
-        od;
-        for i in [pos + Length(subword) .. Length(letterRep)] do
-            Append(out, [letterRep[i]]);
-        od;
-        pos := PositionSublist(out, subword);
-        if pos <> fail then
-            return SEMIGROUPS.StzReplaceSubwordRel(out, subword, newWord);
-        else
-            return out;
-        fi;
+      for i in [1 .. pos - 1] do
+          Append(out, [letterRep[i]]);
+      od;
+      for i in [1 .. Length(newWord)] do
+          Append(out, [newWord[i]]);
+      od;
+      for i in [pos + Length(subword) .. Length(letterRep)] do
+          Append(out, [letterRep[i]]);
+      od;
+      return out;
     else
-        return letterRep;
+      return letterRep;
     fi;
 end;
 
@@ -357,10 +352,30 @@ function(stz)
   while transformApplied do
     count := count + 1;
     Print(count);
-    transformApplied := SEMIGROUPS.StzSimplifyOnce(stz);
+    transformApplied := StzSimplifyOnce(stz);
     Print("\n");
     Print(ViewString(stz));
   od;
+end);
+
+InstallMethod(SimplifiedFpPresentation,
+[IsFpSemigroup],
+function(S)
+  local T, map;
+  map := SimplifyFpPresentation(S);
+  T := Range(map);
+  SetUnreducedFpSemigroupOfFpSemigroup(T, S);
+  SetFpTietzeIsomorphism(T, map);
+  return T;
+end);
+
+InstallMethod(SimplifyFpPresentation,
+[IsFpSemigroup],
+function(S)
+  local stz;
+  stz := StzPresentation(S);
+  StzSimplifyPresentation(stz);
+  return TietzeIsomorphism(stz);
 end);
 
 # TIETZE TRANSFORMATION 1: INTERNAL: ADD REDUNDANT RELATION - NO CHECK
@@ -788,9 +803,6 @@ SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
   count := 0;
   for rel in rels do
     for relSide in rel do
-      if relSide = subWord then
-        continue;
-      fi;
       pos := PositionSublist(relSide, subWord);
       relSideCopy := ShallowCopy(relSide);
       while pos <> fail do
@@ -898,7 +910,7 @@ SEMIGROUPS.StzCheckSubstituteInstancesOfRelation := function(stz, relIndex)
   SortBy(rel, Length);
   len := Length(stz);
   relLenDiff := Length(rel[2]) - Length(rel[1]);
-  numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, rel[2]);
+  numInstances := SEMIGROUPS.StzCountRelationSubwords(stz, rel[2]) - 1;
   newLen := len - numInstances * relLenDiff;
   return newLen;
 end;
@@ -1007,6 +1019,22 @@ SEMIGROUPS.StzCheckAllRelsDuplicate := function(stz)
               argument := Position(out, Minimum(out)));
 end;
 
+SEMIGROUPS.StzTrivialRelationCheck := function(stz)
+  local rels, out, len, i;
+  rels := RelationsOfStzPresentation(stz);
+  len := Length(stz);
+  out := [];
+  for i in [1 .. Length(rels)] do
+    if rels[i][1] = rels[i][2] then
+      Append(out, [len - Length(rels[i][1]) * 2]);
+    else
+      Append(out, [len]);
+    fi;
+  od;
+  return rec(reduction := Minimum(out),
+              argument := Position(out, Minimum(out)));
+end;
+
 SEMIGROUPS.StzApplyRelsDuplicate := function(stz, args)
   SEMIGROUPS.TietzeTransformation2(stz, args!.argument);
 end;
@@ -1019,20 +1047,22 @@ SEMIGROUPS.StzApplyAllRelsSubInstances := function(stz, args)
   SEMIGROUPS.StzSubstituteInstancesOfRelation(stz, args!.argument);
 end;
 
-## Format to add a new reductioncheck:
+## Format to add a new reduction check:
 ## Add a function that calculates the potential new length for a specific
 ## instance - eg a specific relation, generator, subword, etc (StzCheck)
 ## Add a function that applies the above to each possible instance (or some
 ## possible instances), find the least length out of these and return a record
-## rec(reduction := *least length*, argument := *arguments needed to apply
+## rec(reduction := *least length*, *argument* := *arguments needed to apply
 ## reduction*) (StzCheckAll)
 ## Add a final function that will apply the necessary Tietze transformations
 ## given the arguments, which takes as parameters the record from the above
 ## function (StzApply)
 ## To the results list below, add a new list [StzApply, StzCheckAll]
 
-SEMIGROUPS.StzSimplifyOnce := function(stz)
-  local rels, gens, results, mins, len, func, args, genRedundant, result;
+InstallMethod(StzSimplifyOnce,
+[IsStzPresentation],
+function(stz)
+  local rels, gens, results, mins, len, func, args, result;
   rels := RelationsOfStzPresentation(stz);
   results := [[SEMIGROUPS.StzApplyGensRedundant,
                 SEMIGROUPS.StzCheckAllGensRedundant(stz)],
@@ -1041,7 +1071,9 @@ SEMIGROUPS.StzSimplifyOnce := function(stz)
               [SEMIGROUPS.StzApplyAllRelsSubInstances,
                 SEMIGROUPS.StzCheckAllRelsSubInstances(stz)],
               [SEMIGROUPS.StzFrequentSubwordApply,
-                SEMIGROUPS.StzFrequentSubwordCheck(stz)]];
+                SEMIGROUPS.StzFrequentSubwordCheck(stz)],
+              [SEMIGROUPS.StzApplyRelsDuplicate,
+                SEMIGROUPS.StzTrivialRelationCheck(stz)]];
   len := Length(stz);
   mins := List(results, x -> x[2].reduction);
   if Minimum(mins) < len then
@@ -1055,4 +1087,7 @@ SEMIGROUPS.StzSimplifyOnce := function(stz)
     return true;
   fi;
   return false;
-end;
+end);
+
+F := FreeSemigroup(3);
+S := F/[[F.1^4,F.1],[F.1,F.1^44],[F.1^8,F.2*F.3]];
