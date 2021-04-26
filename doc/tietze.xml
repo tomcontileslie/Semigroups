@@ -1,0 +1,98 @@
+#############################################################################
+##
+#W  tietze.xml
+#Y  Copyright (C) 2021                                   Tom Conti-Leslie
+##                                                       Ben Spiers
+##
+##  Licensing information can be found in the README file of this package.
+##
+#############################################################################
+##
+
+## TODO DELETE - JUST HERE AS EXAMPLE
+<#GAPDoc Label="TrivialSemigroup">
+  <ManSection>
+    <Func Name="TrivialSemigroup" Arg="[filt, ][deg]"/>
+    <Returns>
+      A trivial semigroup.
+    </Returns>
+      <Description>
+        A <B>trivial</B> semigroup is a semigroup with precisely one element.
+        This function returns a trivial semigroup in the representation given
+        by the filter <A>filter</A>, and (if possible) with the degree of the
+        representation given by the non-negative integer <A>deg</A>.
+        <P/>
+
+        The optional argument <A>filt</A> may be one of the following:
+
+        <List>
+          <Item><C>IsTransformationSemigroup</C>
+            (the default, if <A>filt</A> is not specified),</Item>
+          <Item><C>IsPartialPermSemigroup</C>,</Item>
+          <Item><C>IsBipartitionSemigroup</C>,</Item>
+          <Item><C>IsBlockBijectionSemigroup</C>,</Item>
+          <Item><C>IsPBRSemigroup</C>,</Item>
+          <Item><C>IsBooleanMatSemigroup</C>.</Item>
+        </List>
+
+        If the optional argument <A>deg</A> is not specified, then the smallest
+        possible degree will be used.
+        <P/>
+        <Example><![CDATA[
+gap> S := TrivialSemigroup();
+<trivial transformation group of degree 0 with 1 generator>
+gap> Size(S);
+1
+gap> S := TrivialSemigroup(3);
+<trivial transformation group of degree 3 with 1 generator>
+gap> S := TrivialSemigroup(IsBipartitionSemigroup, 2);
+<trivial block bijection group of degree 2 with 1 generator>
+gap> Elements(S);
+[ <block bijection: [ 1, 2, -1, -2 ]> ]]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="StzPresentation">
+  <ManSection>
+    <Oper Name="StzPresentation" Arg="s"/>
+    <Returns>
+      A Semigroup Tietze (Stz) object.
+    </Returns>
+    <Description>
+      If <A>s</A> is a fp semigroup
+      (<Ref Filt="IsFpSemigroup" BookName="ref"/>),
+      then this function returns a modifiable object representing the generators
+      and relations of <A>s</A>.
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="IsStzPresentation">
+  <ManSection>
+    <Filt Name="IsStzPresentation" Arg="stz"/>
+    <Returns>
+      <K>true</K> or <K>false</K>.
+    </Returns>
+    <Description>
+      Every semigroup Tietze object is an element of the category
+      <C>IsStzPresentation</C>. Internally, each Stz object contains a list
+      of generators (each represented as a string) and a list of relations
+      (each represented as a pair of LetterRep words, see
+      <Ref Oper="LetterRepAssocWord" BookName="ref"/>).
+      These generator and relation lists can be modified using Tietze
+      transformations
+      (LINK TO LATER SECTION HERE).
+
+      <P/>
+
+      When a <C>IsStzPresentation</C> object <A>stz</A> is created from an fp
+      semigroup <C>s</C> using <C>stz := StzPresentation(s)</C>, the generators
+      and relations of <A>stz</A> are initially equal to the generators and
+      relations of <C>s</C>. However, as the Stz object <A>stz</A> is modified,
+      these lists may change, and their current state can be viewed using
+      (LINK TO GENERATORSOFSTZPRESENTATION) and
+      (LINK TO RELATIONSOFSTZPRESENTATION).
+    </Description>
+  </ManSection>
+<#/GAPDoc>
