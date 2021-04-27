@@ -91,8 +91,8 @@ gap> Elements(S);
       and relations of <A>stz</A> are initially equal to the generators and
       relations of <C>s</C>. However, as the Stz object <A>stz</A> is modified,
       these lists may change, and their current state can be viewed using
-      (LINK TO GENERATORSOFSTZPRESENTATION) and
-      (LINK TO RELATIONSOFSTZPRESENTATION).
+      <Ref Oper="GeneratorsOfStzPresentation"/> and
+      <Ref Oper="RelationsOfStzPresentation"/>.
     </Description>
   </ManSection>
 <#/GAPDoc>
@@ -108,8 +108,8 @@ gap> Elements(S);
       will return an FpSemigroup object <A>T</A> which is isomorphic to <A>S</A>
       which has been reduced to minimise its length.
 
-      <C>SimplifiedFpSemigroup</C> applies <C>SimplifyFpSemigroup</C> 
-      (<Ref Oper="SimplifyFpSemigroup"/>)
+      <C>SimplifiedFpSemigroup</C> applies
+      <Ref Oper="SimplifyFpSemigroup"/>
       and assigns the <C>Range</C> of the isomorphism object which is returned
       to <A>T</A>, adding the isomorphism to <A>T</A> as an attribute. In this
       way, while <A>T</A> is a completely new FpSemigroup object, words in
@@ -151,8 +151,7 @@ false]]></Example>
       further.<P/>
 
       <C>SimplifyFpSemigroup</C> applies the function
-      <C>StzSimplifyPresentation</C>
-      (<Ref Oper="StzSimplifyPresentation"/>)
+      <Ref Oper="StzSimplifyPresentation"/>
       to <A>stz</A>, which repeatedly checks
       whether a number of different possible transformations will cause a
       reduction in length, and if so applies the best one. This loop continues
@@ -273,18 +272,17 @@ gap> StzSimplifyPresentation(stz);
     </Returns>
     <Description>
       If <A>S</A> is an fp semigroup object that has been obtained through
-      calling <C>SimplifiedFpSemigroup</C>
-      (<Ref Oper="SimplifiedFpSemigroup"/>)
+      calling
+      <Ref Oper="SimplifiedFpSemigroup"/>
       on some fp semigroup <A>T</A>
       then <C>UnreducedFpSemigroupOfFpSemigroup</C> returns the original
       semigroup object before simplification. These are unrelated semigroup 
-      objects, except for that <A>S</A> will have a <C>FpTietzeIsomorphism</C>
-      (<Ref Oper="FpTietzeIsomorphism"/>)
+      objects, except for that <A>S</A> will have a
+      <Ref Oper="FpTietzeIsomorphism"/>
       attribute that returns an isomorphic mapping from <A>T</A> to <A>S</A>.
       <P/>
 
-      If <C>SimplifyFpSemigroup</C>
-      (<Ref Oper="SimplifyFpSemigroup"/>)
+      If (Ref Oper="SimplifyFpSemigroup"/>
       has been called on an fp semigroup <A>T</A>,
       then <C>UnreducedFpSemigroupOfFpSemigroup</C> can be used on the
       <C>Range</C> of the resultant mapping to obtain the domain.
@@ -315,8 +313,7 @@ true]]></Example>
     </Returns>
     <Description>
       If <A>S</A> is an fp semigroup object that has been obtained through
-      calling <C>SimplifiedFpSemigroup</C>
-      (<Ref Oper="SimplifiedFpSemigroup"/>)
+      calling <Ref Oper="SimplifiedFpSemigroup"/>
       on some fp semigroup <A>T</A>
       then <C>FpTietzeIsomorphism</C> returns an isomorphic mapping from
       <A>T</A> to <A>S</A>. Simplification produces an fp semigroup isomorphic 
@@ -341,8 +338,74 @@ gap> S.1;
 b
 gap> T.2 = S.1;
 false
-gap> T.2^map = S.1;
-true]]></Example>
+gap> T.2^map = S.1;]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="GeneratorsOfStzPresentation">
+  <ManSection>
+    <Filt Name="GeneratorsOfStzPresentation" Arg="stz"/>
+    <Returns>
+      A list of strings.
+    </Returns>
+    <Description>
+      If <A>stz</A> is an StzPresentation object then
+      <C>GeneratorsOfStzPresentation</C> will return as strings the generators
+      of the fp semigroup that the presentation was created from. In the 
+      StzPresentation object it is only necessary to know how many generators
+      there are, but for the purposes of representing generators and relations 
+      of the presentation object and building a new fp semigroup from the object
+      the strings that the generators should appear as are stored.
+
+      <P/>
+
+      As Tietze transformations are performed on <A>stz</A>, the generators
+      will change, but the labels will remain as close to the original labels 
+      as possible, so that if a generator in the fp semigroup obtained from 
+      the presentation is the same as a generator in the original fp semigroup,
+      then they should have the same label.
+      
+
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> stz := StzPresentation(T);
+<fp semigroup presentation with 3 generators and 2 relations with length 19>
+gap> GeneratorsOfStzPresentation(stz);
+[ "a", "b", "c" ]]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="RelationsOfStzPresentation">
+  <ManSection>
+    <Filt Name="RelationsOfStzPresentation" Arg="stz"/>
+    <Returns>
+      A list of pairs of words in letter rep form.
+    </Returns>
+    <Description>
+      If <A>stz</A> is an StzPresentation object then
+      <C>RelationsOfStzPresentation</C> will return in letter rep form the 
+      current relations of the presentation object. When the presentation object
+      is first created, these will be the letter rep forms of the relations of 
+      the fp semigroup object that is used to create <A>stz</A>. As Tietze 
+      transformations are performed on the presentation object, the relations 
+      returned by this function will change to reflect the transformations.
+      
+
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> stz := StzPresentation(T);
+<fp semigroup presentation with 3 generators and 2 relations with length 19>
+gap> RelationsOfStzPresentation(stz);
+[ [ [ 1 ], [ 2, 2, 2, 2, 2, 3 ] ], [ [ 2, 2, 2, 2, 2, 2 ], [ 2, 2, 2 ] ] ]]]>
+</Example>
     </Description>
   </ManSection>
 <#/GAPDoc>

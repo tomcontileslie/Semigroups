@@ -82,6 +82,8 @@
 
     <#Include Label = "StzPresentation">
     <#Include Label = "IsStzPresentation">
+    <#Include Label = "GeneratorsOfStzPresentation">
+    <#Include Label = "RelationsOfStzPresentation">
     MORE FUNCTIONS TO COME: Generators/RelationsOfStzPresentation;
     UnreducedSemigroupOf... etc
   </Section>
