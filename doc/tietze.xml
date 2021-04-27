@@ -264,3 +264,85 @@ gap> StzSimplifyPresentation(stz);
     </Description>
   </ManSection>
 <#/GAPDoc>
+
+<#GAPDoc Label="UnreducedFpSemigroupOfFpSemigroup">
+  <ManSection>
+    <Filt Name="UnreducedFpSemigroupOfFpSemigroup" Arg="S"/>
+    <Returns>
+      <A>T</A>, an fp semigroup object.
+    </Returns>
+    <Description>
+      If <A>S</A> is an fp semigroup object that has been obtained through
+      calling <C>SimplifiedFpSemigroup</C>
+      (<Ref Oper="SimplifiedFpSemigroup"/>)
+      on some fp semigroup <A>T</A>
+      then <C>UnreducedFpSemigroupOfFpSemigroup</C> returns the original
+      semigroup object before simplification. These are unrelated semigroup 
+      objects, except for that <A>S</A> will have a <C>FpTietzeIsomorphism</C>
+      (<Ref Oper="FpTietzeIsomorphism"/>)
+      attribute that returns an isomorphic mapping from <A>T</A> to <A>S</A>.
+      <P/>
+
+      If <C>SimplifyFpSemigroup</C>
+      (<Ref Oper="SimplifyFpSemigroup"/>)
+      has been called on an fp semigroup <A>T</A>,
+      then <C>UnreducedFpSemigroupOfFpSemigroup</C> can be used on the
+      <C>Range</C> of the resultant mapping to obtain the domain.
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> S := SimplifiedFpSemigroup(T);
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 19>
+#I  <Removing redundant generator a using relation :1. a = b^5*c>
+#I  <fp semigroup presentation with 2 generators and 1 relation with length 11>
+#I  <Creating new generator to replace instances of word: b^3>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+<fp semigroup on the generators [ b, c, d ]>
+gap> UnreducedFpSemigroupOfFpSemigroup(S) = T;
+true]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="FpTietzeIsomorphism">
+  <ManSection>
+    <Filt Name="FpTietzeIsomorphism" Arg="S"/>
+    <Returns>
+      A mapping object.
+    </Returns>
+    <Description>
+      If <A>S</A> is an fp semigroup object that has been obtained through
+      calling <C>SimplifiedFpSemigroup</C>
+      (<Ref Oper="SimplifiedFpSemigroup"/>)
+      on some fp semigroup <A>T</A>
+      then <C>FpTietzeIsomorphism</C> returns an isomorphic mapping from
+      <A>T</A> to <A>S</A>. Simplification produces an fp semigroup isomorphic 
+      to the original fp semigroup, and these two fp semigroup objects can 
+      interact with each other through the mapping given by this function.
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> S := SimplifiedFpSemigroup(T);
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 19>
+#I  <Removing redundant generator a using relation :1. a = b^5*c>
+#I  <fp semigroup presentation with 2 generators and 1 relation with length 11>
+#I  <Creating new generator to replace instances of word: b^3>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+<fp semigroup on the generators [ b, c, d ]>
+gap> T.2;
+b
+gap> S.1;
+b
+gap> T.2 = S.1;
+false
+gap> T.2^map = S.1;
+true]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>

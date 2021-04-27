@@ -1065,8 +1065,8 @@ end;
 ## StzApply: function that takes an stz presentation and the above record as
 ##           input and applies the arguments from the record to achieve the
 ##           desired reduction
-## Add the above two functions to the list results below as the pair
-## [StzApply, StzCheck(stz)]
+## Add the above two functions to the list results in StzSimplifyOnce as the
+## pair [StzApply, StzCheck(stz)]
 
 SEMIGROUPS.StzFrequentSubwordCheck := function(stz)
   local best_gain, best_word, flat, count_occurrences, n, c, gain, word,

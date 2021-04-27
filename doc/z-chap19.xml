@@ -115,9 +115,6 @@
     <Heading>
       Automatically simplifying a presentation
     </Heading>
-    Content to include here: StzSimplifyOnce, StzSimplifyPresentation, and then
-    also direct methods on semigroups (SimplifiedFpSemigroup etc)
-
     <P/>
 
     It is possible to create a presentation object from an fp semigroup object 
@@ -133,6 +130,10 @@
 
     <P/>
 
+    <Heading>
+      Automatically simplifying an fp semigroup
+    </Heading>
+
     It may be the case that, rather than work with a presentation object, we 
     want to start with an fp semigroup object and obtain the most simplified
     version of that fp semigroup that StzSimplifyPresentation can produce. In 
@@ -143,5 +144,7 @@
 
     <#Include Label="SimplifyFpSemigroup">
     <#Include Label="SimplifiedFpSemigroup">
+    <#Include Label="UnreducedFpSemigroupOfFpSemigroup">
+    <#Include Label="FpTietzeIsomorphism">
   </Section>
 </Chapter>
