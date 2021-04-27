@@ -430,7 +430,7 @@ SEMIGROUPS.TietzeTransformation3 := function(stz, word, name)
   SetTietzeBackwardMap(stz, new_maps);
 end;
 
-# TIETZE TRANSFORMATION 4: REMOVE GENERATOR
+# TIETZE TRANSFORMATION 4: INTERNAL: REMOVE GENERATOR - MINIMAL CHECKS
 SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   local found_expr, expr, index, decrement, tempMaps, tempRels, tempGens, i;
   # Arguments:
@@ -455,15 +455,6 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   # analogous, documented function: StzRemoveGenerator.
 
   # argument checks
-  if Length(stz!.gens) = 1 then
-    ErrorNoReturn("cannot remove only remaining generator \"",
-                  stz!.gens[1],
-                  "\"");
-  fi;
-  if gen > Length(stz!.gens) then
-    ErrorNoReturn("second argument must be no greater than the total\n",
-                  "number of generators");
-  fi;
 
   # check we can express <gen> using only other generators
   found_expr := false;
@@ -832,6 +823,60 @@ function(stz, word, name)
                      LetterRepAssocWord(UnderlyingElement(word)),
                      TietzeForwardMap(stz));
   StzAddGenerator(stz, letterrepword, name);
+end);
+
+# Tietze Transformation 4: Remove generator
+InstallMethod(StzRemoveGenerator,
+"For an stz presentation and a positive integer",
+[IsStzPresentation, IsPosInt],
+function(stz, gen)
+  local found, rel;
+  # argument check 1: requested removal is potentially possible
+  if Length(GeneratorsOfStzPresentation(stz)) = 1 then
+    ErrorNoReturn("cannot remove only remaining generator \"",
+                  GeneratorsOfStzPresentation(stz)[1],
+                  "\"");
+  elif gen > Length(GeneratorsOfStzPresentation(stz)) then
+    ErrorNoReturn("second argument must be no greater than the total\n",
+                  "number of generators");
+  fi;
+
+  # argument check 2: generator can be expressed as a product of others.
+  # this check has to be repeated inside Tietze4, but we include it here to
+  # ensure that an incorrect input is clearly reported to the user.
+  found := false;
+  for rel in RelationsOfStzPresentation(stz) do
+    if  (rel[1] = [gen] and not gen in rel[2]) or
+        (rel[2] = [gen] and not gen in rel[1]) then
+      found := true;
+      continue;
+    fi;
+  od;
+  if not found then
+    ErrorNoReturn("StzRemoveGenerator: there is no relation in first\n",
+                  "argument <stz> expressing second argument <gen> as a\n",
+                  "product of other generators");
+  fi;
+
+  # otherwise all good; apply internal Tietze 4 function (it will check
+  # whether any relation can actually express that generator as a combination
+  # of others)
+  SEMIGROUPS.TietzeTransformation4(stz, gen);
+end);
+
+InstallMethod(StzRemoveGenerator,
+"For an stz presentation and a generator name",
+[IsStzPresentation, IsString],
+function(stz, genname)
+  local gen;
+  # find index of genname in stz gens
+  gen := Position(GeneratorsOfStzPresentation(stz), genname);
+  if gen = fail then
+    ErrorNoReturn("StzRemoveGenerator: second argument <gen> does not\n",
+                  "correspond to a generator name in first argument <stz>");
+  else
+    StzRemoveGenerator(stz, gen);
+  fi;
 end);
 
 ########################################################################
