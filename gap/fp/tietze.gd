@@ -17,15 +17,7 @@ DeclareCategory("IsStzPresentation", IsList);
 # Current relations in the process of being reduced
 DeclareAttribute("RelationsOfStzPresentation", IsStzPresentation);
 
-# Setter for relations, checks that list is in ext rep form
-DeclareOperation("SetRelationsOfStzPresentation", [IsStzPresentation, IsList]);
-
 DeclareAttribute("GeneratorsOfStzPresentation", IsStzPresentation);
-
-DeclareOperation("SetGeneratorsOfStzPresentation", [IsStzPresentation, IsList]);
-
-# Constructs new fp semigroup out of current relations and generators
-DeclareOperation("SemigroupOfStzPresentation", [IsStzPresentation]);
 
 # Stores original semigroup before reductions
 DeclareAttribute("UnreducedSemigroupOfStzPresentation", IsStzPresentation);
@@ -35,10 +27,6 @@ DeclareAttribute("UnreducedSemigroupOfStzPresentation", IsStzPresentation);
 # Otherwise must keep track of all tietze transforms i suppose
 DeclareAttribute("TietzeForwardMap", IsStzPresentation);
 DeclareAttribute("TietzeBackwardMap", IsStzPresentation);
-
-DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsPosInt, IsList]);
-DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsList]);
-DeclareOperation("SetTietzeBackwardMap", [IsStzPresentation, IsList]);
 
 DeclareOperation("TietzeForwardMapReplaceSubword",
 [IsStzPresentation, IsList, IsList]);

@@ -60,18 +60,6 @@ function(S)
                                   out!.tietzeBackwardMap);
 end);
 
-InstallMethod(SetRelationsOfStzPresentation,
-[IsStzPresentation, IsList],
-function(stz, arg)
-  if not ForAll(arg, IsList) or
-      not ForAll(arg, x -> ForAll(x, IsList)) or
-      not ForAll(arg, x -> ForAll(x, y -> ForAll(y, IsPosInt))) then
-        ErrorNoReturn("parameter <arg> must be a list of pairs of words in\n",
-                     "LetterRep format,");
-  fi;
-  stz!.rels := arg;
-end);
-
 InstallMethod(RelationsOfStzPresentation,
 [IsStzPresentation],
 function(stz)
@@ -102,40 +90,13 @@ function(stz)
     return stz!.gens;
 end);
 
-InstallMethod(SetGeneratorsOfStzPresentation,
-[IsStzPresentation, IsList],
-function(stz, newGens)
-    stz!.gens := newGens;
-end);
-
-#####
-##### TODO: consider removing
-#####
-InstallMethod(SemigroupOfStzPresentation,
-[IsStzPresentation],
-function(stz)
-    local out, F, rels, gens;
-    F := FreeSemigroup(stz!.gens);
-    rels := RelationsOfStzPresentation(stz);
-    gens := GeneratorsOfSemigroup(F);
-    out := F / List(rels, x -> List(x, y -> Product(List(y, z -> gens[z]))));
-    SetUnreducedFpSemigroupOfFpSemigroup(out,
-                                    UnreducedSemigroupOfStzPresentation(stz));
-    # TCL: this may be useless (we can just define an operation on stz which
-    # will return an actual mapping object, rather than storing it as an
-    # attribute of the output semigroup)
-    SetTietzeForwardMap(out,
-                            TietzeForwardMap(stz));
-    return out;
-end);
-
 # TODO: TCL: maybe better to call this StzIsomorphism?
 InstallMethod(TietzeIsomorphism,
 [IsStzPresentation],
 function(stz)
   local source, range, forward_dict, forward_map, backward_dict, backward_map;
   source := UnreducedSemigroupOfStzPresentation(stz);
-  range := SemigroupOfStzPresentation(stz);
+  range := SEMIGROUPS.StzConvertObjToFpSemigroup(stz);
 
   # build forward map
   forward_dict := TietzeForwardMap(stz);
@@ -161,30 +122,6 @@ function(stz)
                                        forward_map,
                                        backward_map);
 
-end);
-
-InstallMethod(SetTietzeForwardMap,
-[IsStzPresentation, IsPosInt, IsList],
-function(stz, index, newMap)
-    stz!.tietzeForwardMap[index] := newMap;
-end);
-
-InstallMethod(SetTietzeForwardMap,
-[IsStzPresentation, IsList],
-function(stz, newMaps)
-    if not ForAll(newMaps, x -> IsList(x) and ForAll(x, IsPosInt)) then
-        ErrorNoReturn("argument <newMaps> must be a list of positive integers,");
-    fi;
-    stz!.tietzeForwardMap := newMaps;
-end);
-
-InstallMethod(SetTietzeBackwardMap,
-[IsStzPresentation, IsList],
-function(stz, newMaps)
-    if not ForAll(newMaps, x -> IsList(x) and ForAll(x, IsPosInt)) then
-      ErrorNoReturn("argument <newMaps> must be a list of positive integers,");
-    fi;
-    stz!.tietzeBackwardMap := newMaps;
 end);
 
 InstallMethod(TietzeForwardMapReplaceSubword,
@@ -513,8 +450,8 @@ SEMIGROUPS.TietzeTransformation3 := function(stz, word, name)
   Add(new_rels, [word, [Length(stz!.gens) + 1]]);
 
   # Update internal representation of the stz object
-  SetGeneratorsOfStzPresentation(stz, new_gens);
-  SetRelationsOfStzPresentation(stz, new_rels);
+  stz!.gens := new_gens;
+  stz!.rels := new_rels;
 
   # Now we need to update the backwards map to express the new generator in
   # terms of the original generators.
@@ -524,7 +461,7 @@ SEMIGROUPS.TietzeTransformation3 := function(stz, word, name)
     Append(back_word, new_maps[letter]);
   od;
   Add(new_maps, back_word);
-  SetTietzeBackwardMap(stz, new_maps);
+  stz!.tietzeBackwardMap := new_maps;
 end;
 
 # TIETZE TRANSFORMATION 4: INTERNAL: REMOVE GENERATOR - MINIMAL CHECKS
@@ -590,24 +527,24 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   TietzeForwardMapReplaceSubword(stz, [gen], expr);
   tempMaps := ShallowCopy(TietzeForwardMap(stz));
   Apply(tempMaps, x -> List(x, decrement));
-  SetTietzeForwardMap(stz, tempMaps);
+  stz!.tietzeForwardMap := tempMaps;
 
   # remove generator from backward mapping component
   tempMaps := ShallowCopy(TietzeBackwardMap(stz));
   Remove(tempMaps, gen);
-  SetTietzeBackwardMap(stz, tempMaps);
+  stz!.tietzeBackwardMap := tempMaps;
 
   # sub in expression we found and remove relation we used for gen
   tempRels := ShallowCopy(RelationsOfStzPresentation(stz));
   Remove(tempRels, index);
-  tempRels := SEMIGROUPS.StzReplaceSubword(tempRels, [gen], expr);
-  SetRelationsOfStzPresentation(stz, tempRels);
+  tempRels  := SEMIGROUPS.StzReplaceSubword(tempRels, [gen], expr);
+  stz!.rels := tempRels;
   Apply(stz!.rels, x -> List(x, y -> List(y, decrement)));
 
   # remove generator.
   tempGens := ShallowCopy(GeneratorsOfStzPresentation(stz));
   Remove(tempGens, gen);
-  SetGeneratorsOfStzPresentation(stz, tempGens);
+  stz!.gens := tempGens;
 end;
 
 ########################################################################
@@ -1129,6 +1066,15 @@ SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
     od;
   od;
   return count;
+end;
+
+SEMIGROUPS.StzConvertObjToFpSemigroup := function(stz)
+  local out, F, rels, gens;
+  F := FreeSemigroup(stz!.gens);
+  rels := RelationsOfStzPresentation(stz);
+  gens := GeneratorsOfSemigroup(F);
+  out := F / List(rels, x -> List(x, y -> Product(List(y, z -> gens[z]))));
+  return out;
 end;
 
 ########################################################################
