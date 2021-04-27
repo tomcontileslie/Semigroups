@@ -17,9 +17,6 @@ DeclareCategory("IsStzPresentation", IsList);
 # Current relations in the process of being reduced
 DeclareAttribute("RelationsOfStzPresentation", IsStzPresentation);
 
-# Letter representation of the current relations
-DeclareOperation("LetterRepRelationsOfStzPresentation", [IsStzPresentation]);
-
 # Setter for relations, checks that list is in ext rep form
 DeclareOperation("SetRelationsOfStzPresentation", [IsStzPresentation, IsList]);
 

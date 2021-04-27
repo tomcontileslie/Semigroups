@@ -96,3 +96,171 @@ gap> Elements(S);
     </Description>
   </ManSection>
 <#/GAPDoc>
+
+<#GAPDoc Label="SimplifiedFpSemigroup">
+  <ManSection>
+    <Filt Name="SimplifiedFpSemigroup" Arg="S"/>
+    <Returns>
+      <A>T</A>, an FpSemigroup object.
+    </Returns>
+    <Description>
+      If <A>S</A> is an FpSemigroup object, then <C>SimplifiedFpSemigroup</C> 
+      will return an FpSemigroup object <A>T</A> which is isomorphic to <A>S</A>
+      which has been reduced to minimise its length.
+
+      <C>SimplifiedFpSemigroup</C> applies <C>SimplifyFpSemigroup</C> 
+      (<Ref Oper="SimplifyFpSemigroup"/>)
+      and assigns the <C>Range</C> of the isomorphism object which is returned
+      to <A>T</A>, adding the isomorphism to <A>T</A> as an attribute. In this
+      way, while <A>T</A> is a completely new FpSemigroup object, words in
+      <A>S</A> can be mapped to <A>T</A> using the map obtained from the
+      attribute <C>FpTietzeIsomorphism(T)</C>.
+
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");;
+gap> S := F/[[F.1^4, F.1], [F.1, F.1^44], [F.1^8, F.2*F.3]];;
+gap> T := SimplifiedFpSemigroup(S);;
+gap> map := FpTietzeIsomorphism(T);;
+gap> S.1^map;
+b*c
+gap> S.1^map = T.1 * T.2;
+true
+gap> invmap := InverseGeneralMapping(map);;
+gap> T.1^invmap = S.2;
+true
+gap> T.1 = S.2;
+false]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="SimplifyFpSemigroup">
+  <ManSection>
+    <Filt Name="SimplifyFpSemigroup" Arg="S"/>
+    <Returns>
+      A mapping object.
+    </Returns>
+    <Description>
+      If <A>S</A> is an FpSemigroup object, then <C>SimplifyFpSemigroup</C> 
+      will return a mapping object which will map <A>S</A> to an FpSemigroup
+      which has had its presentation simplified.
+
+      <C>SimplifyFpSemigroup</C> creates an <C>StzPresentation</C> object
+      <A>stz</A> from <A>S</A>, which is then reduced using Tietze
+      transformations until the presentation cannot be reduced in length any
+      further.<P/>
+
+      <C>SimplifyFpSemigroup</C> applies the function
+      <C>StzSimplifyPresentation</C>
+      (<Ref Oper="StzSimplifyPresentation"/>)
+      to <A>stz</A>, which repeatedly checks
+      whether a number of different possible transformations will cause a
+      reduction in length, and if so applies the best one. This loop continues
+      until no transformations cause any possible reductions, in which case
+      the mapping is returned. The newly reduced FpSemigroup can be accessed
+      either by taking the range of the mapping or calling
+      <C>SimplifiedFpSemigroup</C>, which first runs <C>SimplifyFpSemigroup</C>
+      and then returns the range of the mapping with the mapping held as an 
+      attribute.
+
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> map := SimplifyFpSemigroup(T);
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 19>
+#I  <Removing redundant generator a using relation :1. a = b^5*c>
+#I  <fp semigroup presentation with 2 generators and 1 relation with length 11>
+#I  <Creating new generator to replace instances of word: b^3>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+MappingByFunction( <fp semigroup on the generators [ a, b, c ]>, <fp semigroup\n
+ on the generators [ b, c, a ]>, function( word ) ... end, function( word )\n
+... end )
+gap> T.1;
+a
+gap> T.1^map;
+b^5*c
+gap> RelationsOfFpSemigroup(Range(map))
+[ [ b^3, a ], [ a^2, a ] ]]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="StzSimplifyOnce">
+  <ManSection>
+    <Filt Name="StzSimplifyOnce" Arg="stz"/>
+    <Returns>
+      <K>true</K> or <K>false</K>
+    </Returns>
+    <Description>
+      If <A>stz</A> is an StzPresentation object, then
+      <C>StzSimplifyOnce</C> will check the possible reductions in length for a
+      number of different possible Tietze transformations, and apply the choice 
+      which gives the least length. If a valid transformation was found then the 
+      function returns <K>true</K>, and if no transformation was performed
+      because none would not lead to a reduction in length, then the function
+      returns <K>false</K>.<P/>
+
+      There are four different possible transformations that
+      <C>StzSimplifyOnce</C> may apply. The function searches for redundant 
+      generators and checks if removing them would give a lesser length, it 
+      checks whether substituting one side of each relation throughout the rest 
+      of the relations would give a lesser length, it checks whether there are 
+      any trivial relations (of the form <A>w = w</A> for some word <A>w</A>)
+      or any duplicated relations (relations which are formed from precisely the
+      same words as another relation), and it checks whether any frequently
+      occurring subwords in the relations can be replaced with a new generator 
+      to produce a lesser length.<P/>
+
+      At InfoLevel 1 the precise transformations performed are printed to the 
+      screen.
+
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> stz := StzPresentation(T);
+<fp semigroup presentation with 3 generators and 2 relations with length 19>
+gap> StzSimplifyOnce(stz);
+#I  <Removing redundant generator a using relation :1. a = b^5*c>
+true
+gap> stz;
+<fp semigroup presentation with 2 generators and 1 relation with length 11>]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="StzSimplifyPresentation">
+  <ManSection>
+    <Filt Name="StzSimplifyPresentation" Arg="stz"/>
+    <Description>
+      If <A>stz</A> is an StzPresentation object, then
+      <C>StzSimplifyOnce</C> will repeatedly apply the best of a few possible 
+      reductions to <A>stz</A> until the reductions no longer lessen the legnth 
+      of the presentation.<P/>
+
+      <C>StzSimplifyPresentation</C> will repeatedly apply the function
+      <C>StzSimplifyOnce</C> to the presentation until
+      <C>StzSimplifyOnce</C> fails to find a transformation which can reduce the
+      length of <A>stz</A>.
+
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> stz := StzPresentation(T);
+<fp semigroup presentation with 3 generators and 2 relations with length 19>
+gap> StzSimplifyPresentation(stz);
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 19>
+#I  <Removing redundant generator a using relation :1. a = b^5*c>
+#I  <fp semigroup presentation with 2 generators and 1 relation with length 11>
+#I  <Creating new generator to replace instances of word: b^3>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>]]></Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>

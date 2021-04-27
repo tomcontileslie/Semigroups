@@ -117,5 +117,31 @@
     </Heading>
     Content to include here: StzSimplifyOnce, StzSimplifyPresentation, and then
     also direct methods on semigroups (SimplifiedFpSemigroup etc)
+
+    <P/>
+
+    It is possible to create a presentation object from an fp semigroup object 
+    and attempt to manually reduce it by applying Tietze transformations.
+    However, there may be many different reductions that can be applied, so 
+    StzSimplifyOnce can be used to automatically check a number of different 
+    possible reductions and apply the best one. Then, StzSimplifyPresentation 
+    repeatedly applies StzSimplifyOnce to the presentation object until it fails
+    to reduce the presentation any further.
+
+    <#Include Label="StzSimplifyOnce">
+    <#Include Label="StzSimplifyPresentation">
+
+    <P/>
+
+    It may be the case that, rather than work with a presentation object, we 
+    want to start with an fp semigroup object and obtain the most simplified
+    version of that fp semigroup that StzSimplifyPresentation can produce. In 
+    this case, SimplifyFpSemigroup can be applied to obtain a mapping from the 
+    original semigroup to a newly reduced one, and SimplifiedFpSemigroup can be 
+    used to obtain a new fp semigroup isomorphic to the first with reduced 
+    relations and generators.
+
+    <#Include Label="SimplifyFpSemigroup">
+    <#Include Label="SimplifiedFpSemigroup">
   </Section>
 </Chapter>
