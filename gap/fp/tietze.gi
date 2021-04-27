@@ -341,8 +341,7 @@ end);
 InstallMethod(StzSimplifyPresentation,
 [IsStzPresentation],
 function(stz)
-  local len, newLen, transformApplied;
-  len := Length(stz);
+  local transformApplied;
   transformApplied := true;
   Info(InfoWarning, 1, ViewString(stz));
   while transformApplied do
@@ -355,7 +354,7 @@ InstallMethod(SimplifiedFpSemigroup,
 [IsFpSemigroup],
 function(S)
   local T, map;
-  map := SimplifyFpPresentation(S);
+  map := SimplifyFpSemigroup(S);
   T := Range(map);
   SetUnreducedFpSemigroupOfFpSemigroup(T, S);
   SetFpTietzeIsomorphism(T, map);
@@ -455,7 +454,7 @@ SEMIGROUPS.TietzeTransformation3 := function(stz, word, name)
   fi;
 
   # in either case we have added a new generator: for cosmetic reasons,
-  # prohibit that generator name from being auto-used again (in case we delete
+  # prohibit that generator name from being auto-used again (in case we delete
   # it)
   UniteSet(stz!.usedGens, new_gens);
 
@@ -572,7 +571,7 @@ end;
 InstallMethod(StzPrintRelation, "for an stz presentation,",
 [IsStzPresentation, IsPosInt],
 function(stz, i)
-  local str, rels, f, gens, w1, w2, out;
+  local rels, f, gens, w1, w2, out;
   rels := RelationsOfStzPresentation(stz);
   if i > Length(rels) then
     return fail;
@@ -1166,12 +1165,12 @@ SEMIGROUPS.StzRedundantGeneratorCheck := function(stz)
       relPos := Position(rels, rel);
       numInstances := 0;
       for r in Concatenation([1 .. relPos - 1], [relPos + 1 .. Length(rels)]) do
-        tempPositions := Length(Positions(Concatenation(rels[r][1],rels[r][2]),
+        tempPositions := Length(Positions(Concatenation(rels[r][1], rels[r][2]),
                                           genToRemove));
-        numInstances := numInstances + tempPositions;
+        numInstances  := numInstances + tempPositions;
       od;
-      redLen := Length(stz) + (numInstances * (Length(wordToReplace) - 1))
-                - 2 - Length(wordToReplace);
+      redLen := Length(stz) + (numInstances * (Length(wordToReplace) - 1)) -
+                2 - Length(wordToReplace);
       if redLen < currentMin then
         currentMin := redLen;
         currentGen := genToRemove;
@@ -1258,19 +1257,19 @@ SEMIGROUPS.StzGensRedundantApply := function(stz, args)
   Append(str, GeneratorsOfStzPresentation(stz)[args.argument]);
   Append(str, " using relation :");
   Append(str, StzPrintRelation(stz, args.infoRel));
-  Append(str,">");
+  Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
   SEMIGROUPS.TietzeTransformation4(stz, args.argument);
 end;
 
 SEMIGROUPS.StzRelsSubApply := function(stz, args)
-  local str, rels, rel, containsRel, subword, tempRelSide1, tempRelSide2, i, j,
-        replaceWord, newRel;
+  local str, relIndex, rels, rel, subword, replaceWord, containsRel, newRel, i,
+        j;
   str := "<Replacing all instances in other relations of relation: ";
   Append(str, StzPrintRelation(stz, args.argument));
   Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
-  
+
   relIndex := args.argument;
   rels := RelationsOfStzPresentation(stz);
   rel := ShallowCopy(rels[relIndex]);
@@ -1307,7 +1306,7 @@ end;
 InstallMethod(StzSimplifyOnce,
 [IsStzPresentation],
 function(stz)
-  local rels, gens, results, mins, len, func, args, result;
+  local rels, results, len, mins, result, func, args;
   rels := RelationsOfStzPresentation(stz);
   if Length(rels) = 0 then
     return false;
@@ -1339,17 +1338,17 @@ end);
 # For testing purposes, remove before merge (also possibly a duplicate of an
 # existing function)
 SEMIGROUPS.RandomFpSemigroup := function(maxgen, maxrel, maxwordlen)
-  local S, rels, gens, ngens, nrels, F, i, lside, rside, nwordlen;
-  ngens := Random([1..maxgen]);
-  nrels := Random([1..maxrel]);
-  F := FreeSemigroup(ngens);
-  gens := GeneratorsOfSemigroup(F);
-  rels := [];
-  for i in [1..nrels] do
-    nwordlen := Random([1..maxwordlen]);
-    lside := Product(List([1..nwordlen], x -> gens[Random([1..ngens])]));
-    rside := Product(List([1..nwordlen], x -> gens[Random([1..ngens])]));
+  local ngens, nrels, F, gens, rels, nwordlen, lside, rside, i;
+  ngens := Random([1 .. maxgen]);
+  nrels := Random([1 .. maxrel]);
+  F     := FreeSemigroup(ngens);
+  gens  := GeneratorsOfSemigroup(F);
+  rels  := [];
+  for i in [1 .. nrels] do
+    nwordlen := Random([1 .. maxwordlen]);
+    lside    := Product(List([1 .. nwordlen], x -> gens[Random([1 .. ngens])]));
+    rside    := Product(List([1 .. nwordlen], x -> gens[Random([1 .. ngens])]));
     Append(rels, [[lside, rside]]);
   od;
-  return F/rels;
+  return F / rels;
 end;

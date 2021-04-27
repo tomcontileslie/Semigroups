@@ -39,11 +39,12 @@ DeclareAttribute("UnreducedSemigroupOfStzPresentation", IsStzPresentation);
 DeclareAttribute("TietzeForwardMap", IsStzPresentation);
 DeclareAttribute("TietzeBackwardMap", IsStzPresentation);
 
-DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsPosInt, IsList]); # no longer needed?
+DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsPosInt, IsList]);
 DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsList]);
 DeclareOperation("SetTietzeBackwardMap", [IsStzPresentation, IsList]);
 
-DeclareOperation("TietzeForwardMapReplaceSubword", [IsStzPresentation, IsList, IsList]);
+DeclareOperation("TietzeForwardMapReplaceSubword",
+[IsStzPresentation, IsList, IsList]);
 
 DeclareOperation("StzSimplifyOnce", [IsStzPresentation]);
 DeclareOperation("StzSimplifyPresentation", [IsStzPresentation]);
@@ -72,7 +73,9 @@ DeclareOperation("StzAddGenerator", [IsStzPresentation, IsList, IsString]);
 DeclareOperation("StzAddGenerator", [IsStzPresentation,
                                      IsElementOfFpSemigroup,
                                      IsString]);
-
+# Tietze 4 (remove generator)
+DeclareOperation("StzRemoveGenerator", [IsStzPresentation, IsPosInt]);
+DeclareOperation("StzRemoveGenerator", [IsStzPresentation, IsString]);
 
 DeclareOperation("StzPrintRelations", [IsStzPresentation]);
 DeclareOperation("StzPrintRelation", [IsStzPresentation, IsPosInt]);
