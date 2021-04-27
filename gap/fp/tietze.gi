@@ -1,129 +1,29 @@
-SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
-  local newRels, rel1, rel2, i;
+############################################################################
+##
+##  tietze.gi
+##  Copyright (C) 2021                                    Tom Conti-Leslie
+##                                                              Ben Spiers
+##
+##  Licensing information can be found in the README file of this package.
+##
+############################################################################
+##
 
-  newRels := List([1 .. Length(rels)], x -> []);
-  for i in [1 .. Length(rels)] do
-    rel1 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][1], subword, newWord);
-    rel2 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][2], subword, newWord);
-    newRels[i] := [rel1, rel2];
-  od;
-  return newRels;
-end;
+########################################################################
+# This file is organised as follows:
+#
+# 1.  Definition of the Semigroup Tietze (IsStzPresentation) object
+# 2.  Internal Tietze transformation functions
+# 3.  User-accessible Tietze transformation functions (wrappers)
+# 4.  Internal helper functions for word/relation manipulation etc.
+# 5.  Internal auto-checkers and appliers for presentation simplifying
+# 6.  SimplifyPresentation etc.
+# 7.  Other
+########################################################################
 
-SEMIGROUPS.StzReplaceSubwordRel := function(word, subword, newWord)
-  local out, k, l, i;
-  # Searches a single LetterRepAssocWord list and replaces instances of
-  # subword with newWord.
-
-  # build word up as we read through the old word.
-  out := [];
-  k   := Length(subword);
-  l   := Length(word);
-  i   := 1;  # current index that we are looking at when trying to see subword
-  while i <= l do
-    if word{[i .. Minimum(i + k - 1, l)]} = subword then
-      # in this, case the word starting at i needs to be substituted out.
-      # (the minimum is there to make sure we don't fall off the end of word)
-      Append(out, newWord);
-      # jump to end of occurrence
-      i := i + k;
-    else
-      # move over by one and append the original letter, since the word is not
-      # seen here.
-      Add(out, word[i]);
-      i := i + 1;
-    fi;
-  od;
-  return out;
-end;
-
-# takes in a letterrep word and replaces every letter with its expression in
-# dict.
-# NOTE: does not check arguments. Assumes in good faith that every integer
-# in word has an entry in the list <dict>.
-SEMIGROUPS.StzExpandWord := function(word, dict)
-  local out, letter;
-  out := [];
-  for letter in word do
-    Append(out, dict[letter]);
-  od;
-  return out;
-end;
-
-SEMIGROUPS.NewGeneratorName := function(names_immut)
-  local alph, Alph, na, nA, names_prefx, names_suffx, int_positions, prefixes,
-  prefixes_collected, p, ints, i, name, names;
-  names := [];
-  for name in names_immut do
-    Add(names, ShallowCopy(name));
-  od;
-
-  # useful helper variables
-  alph := "abcdefghijklmnopqrstuvwxyz";
-  Alph := "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-  # SPECIAL CASE 0: empty list
-  if Length(names) = 0 then
-    return "a";
-  fi;
-
-  # SPECIAL CASE 1: only one generator
-  if Length(names) = 1 then
-    if Length(names[1]) = 1 then
-      if names[1][1] in Alph then
-        return [First(Alph, x -> not [x] in names)];
-      elif names[1][1] in alph then
-        return [First(alph, x -> not [x] in names)];
-      else
-        return "a";
-      fi;
-    else
-      return "a";
-    fi;
-  fi;
-
-  # SPECIAL CASE 2: single letter names are present. Add an unused letter
-  # with the most common capitalisation
-  na := Length(Filtered(names, x -> Length(x) = 1 and x[1] in alph));
-  nA := Length(Filtered(names, x -> Length(x) = 1 and x[1] in Alph));
-  if 2 <= na and na < 26 then
-    if na <= nA and nA < 26 then
-      return [First(Alph, x -> not [x] in names)];
-    else
-      return [First(alph, x -> not [x] in names)];
-    fi;
-  elif 2 <= nA and nA < 26 then
-    return [First(Alph, x -> not [x] in names)];
-  fi;
-
-  # SPECIAL CASE 3: there are names like s1, s3, s23, etc or x12, etc
-  names_prefx := ShallowCopy(names);
-  names_suffx := ShallowCopy(names);
-  Apply(names_prefx, x -> [x[1]]);
-  for name in names_suffx do
-    Remove(name, 1);
-  od;
-  int_positions := PositionsProperty(names_suffx, x -> Int(x) <> fail
-                                              and x <> ""
-                                              and x[1] <> '-');
-  if Length(int_positions) >= 2 then
-    prefixes           := names_prefx{int_positions};
-    prefixes_collected := Collected(prefixes);
-    # look for highest frequency in collected list
-    p := prefixes_collected[PositionMaximum(prefixes_collected, x -> x[2])][1];
-    # find maximum suffix int, even amongst those with prefix not p
-    ints := List(names_suffx{int_positions}, Int);
-    i    := Maximum(ints) + 1;
-    return Concatenation(p, String(i));
-  fi;
-
-  # if none of the special cases are covered, just try s1, s2,... until good
-  for i in [1 .. Length(names) + 1] do
-    if not Concatenation("s", String(i)) in names then
-      return Concatenation("s", String(i));
-    fi;
-  od;
-end;
+########################################################################
+# 1. Definition of the Semigroup Tietze (IsStzPresentation) object
+########################################################################
 
 InstallMethod(StzPresentation, "for a finitely presented semigroup",
 [IsFpSemigroup],
@@ -230,6 +130,7 @@ function(stz)
     return out;
 end);
 
+# TODO: TCL: maybe better to call this StzIsomorphism?
 InstallMethod(TietzeIsomorphism,
 [IsStzPresentation],
 function(stz)
@@ -338,37 +239,90 @@ function(stz1, stz2)
     return Length(stz1) < Length(stz2);
 end);
 
-InstallMethod(StzSimplifyPresentation,
+InstallMethod(StzPrintRelation, "for an stz presentation",
+[IsStzPresentation, IsPosInt],
+function(stz, i)
+  local rels, f, gens, w1, w2, out;
+  rels := RelationsOfStzPresentation(stz);
+  if i > Length(rels) then
+    return fail;
+  else
+    f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
+    gens := GeneratorsOfSemigroup(f);
+    w1  := Product(rels[i][1], x -> gens[x]);
+    w2  := Product(rels[i][2], x -> gens[x]);
+    out := Concatenation(PrintString(i),
+                        ". ",
+                        PrintString(w1),
+                        " = ",
+                        PrintString(w2));
+    return out;
+  fi;
+end);
+
+InstallMethod(StzPrintRelations, "For an stz presentation",
 [IsStzPresentation],
 function(stz)
-  local transformApplied;
-  transformApplied := true;
-  Info(InfoWarning, 1, ViewString(stz));
-  while transformApplied do
-    transformApplied := StzSimplifyOnce(stz);
-    Info(InfoWarning, 1, ViewString(stz));
+  local rels, f, gens, w1, w2, out, i;
+  # This function displays the current relations in terms of the current
+  # generators for a semigroup Tietze presentation.
+  # We'd like patterns to be grouped, i.e. abab=(ab)^2 when displayed. To
+  # do this we sneakily piggyback off display methods for the free semigroup.
+  if RelationsOfStzPresentation(stz) = [] then
+    Info(InfoWarning, 1, "There are no relations in the presentation <stz>");
+  fi;
+
+  rels := RelationsOfStzPresentation(stz);
+  f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
+  gens := GeneratorsOfSemigroup(f);
+
+  for i in [1 .. Length(rels)] do
+    w1  := Product(rels[i][1], x -> gens[x]);
+    w2  := Product(rels[i][2], x -> gens[x]);
+    out := Concatenation(PrintString(i),
+                         ". ",
+                         PrintString(w1),
+                         " = ",
+                         PrintString(w2));
+    Info(InfoWarning, 1, out);
   od;
 end);
 
-InstallMethod(SimplifiedFpSemigroup,
-[IsFpSemigroup],
-function(S)
-  local T, map;
-  map := SimplifyFpSemigroup(S);
-  T := Range(map);
-  SetUnreducedFpSemigroupOfFpSemigroup(T, S);
-  SetFpTietzeIsomorphism(T, map);
-  return T;
+InstallMethod(StzPrintGenerators, "For an stz presentation",
+[IsStzPresentation],
+function(stz)
+  local flat, gens, out, rel, i;
+  # This function displays a list of generators and number of occurences
+  # of each
+
+  # warn if there are no generators in the list (not sure this could happen)
+  if GeneratorsOfStzPresentation(stz) = [] then
+    Info(InfoWarning, 1, "There are no generators in the presentation <stz>");
+  fi;
+
+  # create flat flat list of relations to count occurrences
+  flat := [];
+  for rel in RelationsOfStzPresentation(stz) do
+    Append(flat, rel[1]);
+    Append(flat, rel[2]);
+  od;
+
+  # enumerate and count generators
+  gens := GeneratorsOfStzPresentation(stz);
+  for i in [1 .. Length(gens)] do
+    out := Concatenation(PrintString(i),
+                         ".  ",
+                         gens[i],
+                         "  ",
+                         PrintString(Number(flat, x -> x = i)),
+                         " occurrences");
+    Info(InfoWarning, 1, out);
+  od;
 end);
 
-InstallMethod(SimplifyFpSemigroup,
-[IsFpSemigroup],
-function(S)
-  local stz;
-  stz := StzPresentation(S);
-  StzSimplifyPresentation(stz);
-  return TietzeIsomorphism(stz);
-end);
+########################################################################
+# 2. Internal Tietze transformation functions
+########################################################################
 
 # TIETZE TRANSFORMATION 1: INTERNAL: ADD REDUNDANT RELATION - NO CHECK
 SEMIGROUPS.TietzeTransformation1 := function(stz, pair)
@@ -568,90 +522,11 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
   SetGeneratorsOfStzPresentation(stz, tempGens);
 end;
 
-InstallMethod(StzPrintRelation, "for an stz presentation,",
-[IsStzPresentation, IsPosInt],
-function(stz, i)
-  local rels, f, gens, w1, w2, out;
-  rels := RelationsOfStzPresentation(stz);
-  if i > Length(rels) then
-    return fail;
-  else
-    f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
-    gens := GeneratorsOfSemigroup(f);
-    w1  := Product(rels[i][1], x -> gens[x]);
-    w2  := Product(rels[i][2], x -> gens[x]);
-    out := Concatenation(PrintString(i),
-                        ". ",
-                        PrintString(w1),
-                        " = ",
-                        PrintString(w2));
-    return out;
-  fi;
-end);
+########################################################################
+# 3. User-accessible Tietze transformation functions (wrappers)
+########################################################################
 
-InstallMethod(StzPrintRelations, "For an stz presentation",
-[IsStzPresentation],
-function(stz)
-  local rels, f, gens, w1, w2, out, i;
-  # This function displays the current relations in terms of the current
-  # generators for a semigroup Tietze presentation.
-  # We'd like patterns to be grouped, i.e. abab=(ab)^2 when displayed. To
-  # do this we sneakily piggyback off display methods for the free semigroup.
-  if RelationsOfStzPresentation(stz) = [] then
-    Info(InfoWarning, 1, "There are no relations in the presentation <stz>");
-  fi;
-
-  rels := RelationsOfStzPresentation(stz);
-  f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
-  gens := GeneratorsOfSemigroup(f);
-
-  for i in [1 .. Length(rels)] do
-    w1  := Product(rels[i][1], x -> gens[x]);
-    w2  := Product(rels[i][2], x -> gens[x]);
-    out := Concatenation(PrintString(i),
-                         ". ",
-                         PrintString(w1),
-                         " = ",
-                         PrintString(w2));
-    Info(InfoWarning, 1, out);
-  od;
-end);
-
-InstallMethod(StzPrintGenerators, "For an stz presentation",
-[IsStzPresentation],
-function(stz)
-  local flat, gens, out, rel, i;
-  # This function displays a list of generators and number of occurences
-  # of each
-
-  # warn if there are no generators in the list (not sure this could happen)
-  if GeneratorsOfStzPresentation(stz) = [] then
-    Info(InfoWarning, 1, "There are no generators in the presentation <stz>");
-  fi;
-
-  # create flat flat list of relations to count occurrences
-  flat := [];
-  for rel in RelationsOfStzPresentation(stz) do
-    Append(flat, rel[1]);
-    Append(flat, rel[2]);
-  od;
-
-  # enumerate and count generators
-  gens := GeneratorsOfStzPresentation(stz);
-  for i in [1 .. Length(gens)] do
-    out := Concatenation(PrintString(i),
-                         ".  ",
-                         gens[i],
-                         "  ",
-                         PrintString(Number(flat, x -> x = i)),
-                         " occurrences");
-    Info(InfoWarning, 1, out);
-  od;
-end);
-
-###### USER-FRIENDLY TIETZE TRANSFORMATIONS
-
-### TIETZE 1
+# Tietze Transformation 1: Add relation
 InstallMethod(StzAddRelation, "For an stz presentation and a pair of words",
 [IsStzPresentation, IsList],
 function(stz, pair)
@@ -732,7 +607,7 @@ function(stz, pair)
   return;
 end);
 
-### TIETZE 1: NO CHECK
+# Tietze Transformation 1: Add relation (NO REDUNDANCY CHECK)
 InstallMethod(StzAddRelationNC, "For an stz presentation and a pair of words",
 [IsStzPresentation, IsList],
 function(stz, pair)
@@ -800,7 +675,7 @@ function(stz, pair)
   return;
 end);
 
-### TIETZE 2
+# Tietze Transformation 2: Remove relation
 InstallMethod(StzRemoveRelation,
 "For an stz presentation and a pos int",
 [IsStzPresentation, IsPosInt],
@@ -847,7 +722,7 @@ function(stz, index)
   fi;
 end);
 
-### TIETZE 2: NO CHECK
+# Tietze Transformation 2: Remove relation (NO REDUNDANCY CHECK)
 InstallMethod(StzRemoveRelationNC,
 "For an stz presentation and a pos int",
 [IsStzPresentation, IsPosInt],
@@ -864,7 +739,7 @@ function(stz, index)
   return;
 end);
 
-### TIETZE 3
+# Tietze Transformation 3: Add generator
 InstallMethod(StzAddGenerator,
 "For an stz presentation and a LetterRep word",
 [IsStzPresentation, IsList],
@@ -909,7 +784,7 @@ function(stz, word)
   StzAddGenerator(stz, letterrepword);
 end);
 
-### TIETZE 3 (with specified new generator name)
+# Tietze Transformation 3: Add generator (with specified new generator name)
 InstallMethod(StzAddGenerator,
 "For an stz presentation, a LetterRep word and a string",
 [IsStzPresentation, IsList, IsString],
@@ -959,6 +834,137 @@ function(stz, word, name)
   StzAddGenerator(stz, letterrepword, name);
 end);
 
+########################################################################
+# 4. Internal helper functions for word/relation manipulation etc.
+########################################################################
+
+SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
+  local newRels, rel1, rel2, i;
+
+  newRels := List([1 .. Length(rels)], x -> []);
+  for i in [1 .. Length(rels)] do
+    rel1 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][1], subword, newWord);
+    rel2 := SEMIGROUPS.StzReplaceSubwordRel(rels[i][2], subword, newWord);
+    newRels[i] := [rel1, rel2];
+  od;
+  return newRels;
+end;
+
+SEMIGROUPS.StzReplaceSubwordRel := function(word, subword, newWord)
+  local out, k, l, i;
+  # Searches a single LetterRepAssocWord list and replaces instances of
+  # subword with newWord.
+
+  # build word up as we read through the old word.
+  out := [];
+  k   := Length(subword);
+  l   := Length(word);
+  i   := 1;  # current index that we are looking at when trying to see subword
+  while i <= l do
+    if word{[i .. Minimum(i + k - 1, l)]} = subword then
+      # in this, case the word starting at i needs to be substituted out.
+      # (the minimum is there to make sure we don't fall off the end of word)
+      Append(out, newWord);
+      # jump to end of occurrence
+      i := i + k;
+    else
+      # move over by one and append the original letter, since the word is not
+      # seen here.
+      Add(out, word[i]);
+      i := i + 1;
+    fi;
+  od;
+  return out;
+end;
+
+# takes in a letterrep word and replaces every letter with its expression in
+# dict.
+# NOTE: does not check arguments. Assumes in good faith that every integer
+# in word has an entry in the list <dict>.
+SEMIGROUPS.StzExpandWord := function(word, dict)
+  local out, letter;
+  out := [];
+  for letter in word do
+    Append(out, dict[letter]);
+  od;
+  return out;
+end;
+
+SEMIGROUPS.NewGeneratorName := function(names_immut)
+  local alph, Alph, na, nA, names_prefx, names_suffx, int_positions, prefixes,
+  prefixes_collected, p, ints, i, name, names;
+  names := [];
+  for name in names_immut do
+    Add(names, ShallowCopy(name));
+  od;
+
+  # useful helper variables
+  alph := "abcdefghijklmnopqrstuvwxyz";
+  Alph := "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+  # SPECIAL CASE 0: empty list
+  if Length(names) = 0 then
+    return "a";
+  fi;
+
+  # SPECIAL CASE 1: only one generator
+  if Length(names) = 1 then
+    if Length(names[1]) = 1 then
+      if names[1][1] in Alph then
+        return [First(Alph, x -> not [x] in names)];
+      elif names[1][1] in alph then
+        return [First(alph, x -> not [x] in names)];
+      else
+        return "a";
+      fi;
+    else
+      return "a";
+    fi;
+  fi;
+
+  # SPECIAL CASE 2: single letter names are present. Add an unused letter
+  # with the most common capitalisation
+  na := Length(Filtered(names, x -> Length(x) = 1 and x[1] in alph));
+  nA := Length(Filtered(names, x -> Length(x) = 1 and x[1] in Alph));
+  if 2 <= na and na < 26 then
+    if na <= nA and nA < 26 then
+      return [First(Alph, x -> not [x] in names)];
+    else
+      return [First(alph, x -> not [x] in names)];
+    fi;
+  elif 2 <= nA and nA < 26 then
+    return [First(Alph, x -> not [x] in names)];
+  fi;
+
+  # SPECIAL CASE 3: there are names like s1, s3, s23, etc or x12, etc
+  names_prefx := ShallowCopy(names);
+  names_suffx := ShallowCopy(names);
+  Apply(names_prefx, x -> [x[1]]);
+  for name in names_suffx do
+    Remove(name, 1);
+  od;
+  int_positions := PositionsProperty(names_suffx, x -> Int(x) <> fail
+                                              and x <> ""
+                                              and x[1] <> '-');
+  if Length(int_positions) >= 2 then
+    prefixes           := names_prefx{int_positions};
+    prefixes_collected := Collected(prefixes);
+    # look for highest frequency in collected list
+    p := prefixes_collected[PositionMaximum(prefixes_collected, x -> x[2])][1];
+    # find maximum suffix int, even amongst those with prefix not p
+    ints := List(names_suffx{int_positions}, Int);
+    i    := Maximum(ints) + 1;
+    return Concatenation(p, String(i));
+  fi;
+
+  # if none of the special cases are covered, just try s1, s2,... until good
+  for i in [1 .. Length(names) + 1] do
+    if not Concatenation("s", String(i)) in names then
+      return Concatenation("s", String(i));
+    fi;
+  od;
+end;
+
 SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
   local count, relSide, rel, rels, pos, len, relSideCopy;
   rels := RelationsOfStzPresentation(stz);
@@ -978,6 +984,21 @@ SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
   od;
   return count;
 end;
+
+########################################################################
+# 5.  Internal auto-checkers and appliers for presentation simplifying
+########################################################################
+
+## Format to add a new reduction check:
+## StzCheck: function that takes an stz presentation as input and checks all
+##           possible instances of the desired reduction, and outputs as a
+##           record the least length of the possible reductions together with
+##           the arguments required to achieve that length
+## StzApply: function that takes an stz presentation and the above record as
+##           input and applies the arguments from the record to achieve the
+##           desired reduction
+## Add the above two functions to the list results below as the pair
+## [StzApply, StzCheck(stz)]
 
 SEMIGROUPS.StzFrequentSubwordCheck := function(stz)
   local best_gain, best_word, flat, count_occurrences, n, c, gain, word,
@@ -1292,16 +1313,9 @@ SEMIGROUPS.StzRelsSubApply := function(stz, args)
   od;
 end;
 
-## Format to add a new reduction check:
-## StzCheck: function that takes an stz presentation as input and checks all
-##           possible instances of the desired reduction, and outputs as a
-##           record the least length of the possible reductions together with
-##           the arguments required to achieve that length
-## StzApply: function that takes an stz presentationa and the above record as
-##           input and applies the arguments from the record to achieve the
-##           desired reduction
-## Add the above two functions to the list results below as the pair
-## [StzApply, StzCheck(stz)]
+########################################################################
+# 6. SimplifyPresentation etc.
+########################################################################
 
 InstallMethod(StzSimplifyOnce,
 [IsStzPresentation],
@@ -1333,6 +1347,42 @@ function(stz)
     return false;
   fi;
 end);
+
+InstallMethod(StzSimplifyPresentation,
+[IsStzPresentation],
+function(stz)
+  local transformApplied;
+  transformApplied := true;
+  Info(InfoWarning, 1, ViewString(stz));
+  while transformApplied do
+    transformApplied := StzSimplifyOnce(stz);
+    Info(InfoWarning, 1, ViewString(stz));
+  od;
+end);
+
+InstallMethod(SimplifiedFpSemigroup,
+[IsFpSemigroup],
+function(S)
+  local T, map;
+  map := SimplifyFpSemigroup(S);
+  T := Range(map);
+  SetUnreducedFpSemigroupOfFpSemigroup(T, S);
+  SetFpTietzeIsomorphism(T, map);
+  return T;
+end);
+
+InstallMethod(SimplifyFpSemigroup,
+[IsFpSemigroup],
+function(S)
+  local stz;
+  stz := StzPresentation(S);
+  StzSimplifyPresentation(stz);
+  return TietzeIsomorphism(stz);
+end);
+
+########################################################################
+# 7. Other
+########################################################################
 
 #### TODO
 # For testing purposes, remove before merge (also possibly a duplicate of an
