@@ -79,3 +79,4 @@ DeclareOperation("StzPrintRelations", [IsStzPresentation, IsList]);
 DeclareOperation("StzPrintRelation", [IsStzPresentation, IsPosInt]);
 DeclareOperation("StzPrintGenerators", [IsStzPresentation]);
 DeclareOperation("StzPrintGenerators", [IsStzPresentation, IsList]);
+DeclareOperation("StzPrintPresentation", [IsStzPresentation]);

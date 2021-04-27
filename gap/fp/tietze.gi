@@ -339,6 +339,84 @@ function(stz)
   StzPrintGenerators(stz, [1 .. Length(GeneratorsOfStzPresentation(stz))]);
 end);
 
+InstallMethod(StzPrintPresentation, "For an stz presentation",
+[IsStzPresentation],
+function(stz)
+  local status, oldgens, oldfree, oldelms, newgens, newfree, newelms, w, i;
+  # prints everything that is known about the presentation.
+
+  # current generators
+  Info(InfoWarning, 1, "Current generators:");
+  StzPrintGenerators(stz);
+
+  # current relations
+  Info(InfoWarning, 1, "");
+  Info(InfoWarning, 1, "Current relations:");
+  StzPrintRelations(stz);
+
+  # total number and total length
+  Info(InfoWarning, 1, "");
+  status := "There ";
+  if Length(stz!.gens) = 1 then
+    status := Concatenation(status, "is 1 generator");
+  else
+    status := Concatenation(status,
+                            "are ",
+                            PrintString(Length(stz!.gens)),
+                            " generators");
+  fi;
+  status := Concatenation(status, " and ");
+  if Length(stz!.rels) = 1 then
+    status := Concatenation(status, "1 relation");
+  else
+    status := Concatenation(status,
+                            PrintString(Length(stz!.rels)),
+                            " relations");
+  fi;
+  status := Concatenation(status,
+                          " of total length ",
+                          PrintString(Length(stz)),
+                          ".");
+  Info(InfoWarning, 1, status);
+
+  # build free semigroup of old gens for display
+  oldgens := GeneratorsOfSemigroup(UnreducedSemigroupOfStzPresentation(stz));
+  oldgens := List(oldgens, ViewString);
+  oldfree := FreeSemigroup(oldgens);
+  oldelms := GeneratorsOfSemigroup(oldfree);
+
+  # build free semigroup of new gens for display
+  newgens := GeneratorsOfStzPresentation(stz);
+  newfree := FreeSemigroup(newgens);
+  newelms := GeneratorsOfSemigroup(newfree);
+
+  # old generators expressed using current ones
+  Info(InfoWarning, 1, "");
+  Info(InfoWarning, 1, "Generators of original fp semigroup expressed as");
+  Info(InfoWarning, 1, "combinations of generators in current presentation:");
+  for i in [1 .. Length(oldgens)] do
+    w := Product(TietzeForwardMap(stz)[i], x -> newelms[x]);
+    Info(InfoWarning, 1, Concatenation(PrintString(i),
+                                       ". ",
+                                       oldgens[i],
+                                       " = ",
+                                       PrintString(w)));
+  od;
+
+  # new generators expressed using old ones
+  Info(InfoWarning, 1, "");
+  Info(InfoWarning, 1, "Generators of current presentation expressed as");
+  Info(InfoWarning, 1, "combinations of generators of original fp semigroup:");
+  for i in [1 .. Length(newgens)] do
+    w := Product(TietzeBackwardMap(stz)[i], x -> oldelms[x]);
+    Info(InfoWarning, 1, Concatenation(PrintString(i),
+                                       ". ",
+                                       newgens[i],
+                                       " = ",
+                                       PrintString(w)));
+  od;
+end);
+
 ########################################################################
 # 3. Internal Tietze transformation functions
 ########################################################################
@@ -1001,11 +1079,11 @@ SEMIGROUPS.NewGeneratorName := function(names_immut)
   fi;
 
   # SPECIAL CASE 3: there are names like s1, s3, s23, etc or x12, etc
-  names_prefx := ShallowCopy(names);
-  names_suffx := ShallowCopy(names);
-  Apply(names_prefx, x -> [x[1]]);
-  for name in names_suffx do
-    Remove(name, 1);
+  names_prefx := [];
+  names_suffx := [];
+  for name in names do
+    Add(names_prefx, [name[1]]);
+    Add(names_suffx, name{[2 .. Length(name)]});
   od;
   int_positions := PositionsProperty(names_suffx, x -> Int(x) <> fail
                                               and x <> ""
