@@ -114,7 +114,11 @@ gap> Elements(S);
       to <A>T</A>, adding the isomorphism to <A>T</A> as an attribute. In this
       way, while <A>T</A> is a completely new FpSemigroup object, words in
       <A>S</A> can be mapped to <A>T</A> using the map obtained from the
-      attribute <C>FpTietzeIsomorphism(T)</C>.
+      attribute <Ref Oper="FpTietzeIsomorphism"/>.<P/>
+
+      For more information on the mapping between the semigroups and how it is 
+      created, see
+      <Ref Oper="Converting a modified presentation into a semigroup"/>.
 
       <Example><![CDATA[
 gap> F := FreeSemigroup("a", "b", "c");;
@@ -160,7 +164,10 @@ false]]></Example>
       either by taking the range of the mapping or calling
       <C>SimplifiedFpSemigroup</C>, which first runs <C>SimplifyFpSemigroup</C>
       and then returns the range of the mapping with the mapping held as an 
-      attribute.
+      attribute.<P/>
+
+      For more information on how the mapping is created and used, go to
+      <Ref Oper="Converting a modified presentation into a semigroup"/>.
 
       <Example><![CDATA[
 gap> F := FreeSemigroup("a", "b", "c");
@@ -211,7 +218,8 @@ gap> RelationsOfFpSemigroup(Range(map))
       or any duplicated relations (relations which are formed from precisely the
       same words as another relation), and it checks whether any frequently
       occurring subwords in the relations can be replaced with a new generator 
-      to produce a lesser length.<P/>
+      to produce a lesser length. For more details, see
+      <Ref Oper="Changing presentations"/><P/>
 
       At InfoLevel 1 the precise transformations performed are printed to the 
       screen.
@@ -259,7 +267,9 @@ gap> StzSimplifyPresentation(stz);
 #I  <fp semigroup presentation with 2 generators and 1 relation with length 11>
 #I  <Creating new generator to replace instances of word: b^3>
 #I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
-#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>]]></Example>
+#I  <fp semigroup presentation with 3 generators and 2 relations with length 10>
+gap> RelationsOfStzPresentation(stz);
+[ [ [ 1, 1, 1 ], [ 3 ] ], [ [ 3, 3 ], [ 3 ] ] ]]]></Example>
     </Description>
   </ManSection>
 <#/GAPDoc>
@@ -405,6 +415,32 @@ gap> stz := StzPresentation(T);
 <fp semigroup presentation with 3 generators and 2 relations with length 19>
 gap> RelationsOfStzPresentation(stz);
 [ [ [ 1 ], [ 2, 2, 2, 2, 2, 3 ] ], [ [ 2, 2, 2, 2, 2, 2 ], [ 2, 2, 2 ] ] ]]]>
+</Example>
+    </Description>
+  </ManSection>
+<#/GAPDoc>
+
+<#GAPDoc Label="UnreducedSemigroupOfStzPresentation">
+  <ManSection>
+    <Filt Name="UnreducedSemigroupOfStzPresentation" Arg="stz"/>
+    <Returns>
+      An fp semigroup.
+    </Returns>
+    <Description>
+      If <A>stz</A> is an StzPresentation object then
+      <C>UnreducedSemigroupOfStzPresentation</C> will return the fp semigroup 
+      that was used to create <A>stz</A> using <Ref Oper="StzPresentation"/>.
+      
+
+      <Example><![CDATA[
+gap> F := FreeSemigroup("a", "b", "c");
+<free semigroup on the generators [ a, b, c ]>
+gap> T := F / [[F.1, F.2^5 * F.3], [F.2^6, F.2^3]];
+<fp semigroup on the generators [ a, b, c ]>
+gap> stz := StzPresentation(T);
+<fp semigroup presentation with 3 generators and 2 relations with length 19>
+gap> UnreducedSemigroupOfStzPresentation(stz) = T;
+true]]>
 </Example>
     </Description>
   </ManSection>

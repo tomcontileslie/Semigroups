@@ -84,8 +84,7 @@
     <#Include Label = "IsStzPresentation">
     <#Include Label = "GeneratorsOfStzPresentation">
     <#Include Label = "RelationsOfStzPresentation">
-    MORE FUNCTIONS TO COME: Generators/RelationsOfStzPresentation;
-    UnreducedSemigroupOf... etc
+    <#Include Label = "UnreducedSemigroupOfStzPresentation">
   </Section>
 
   <Section Label = "Printing presentations">
@@ -142,7 +141,10 @@
     this case, SimplifyFpSemigroup can be applied to obtain a mapping from the 
     original semigroup to a newly reduced one, and SimplifiedFpSemigroup can be 
     used to obtain a new fp semigroup isomorphic to the first with reduced 
-    relations and generators.
+    relations and generators. With these functions, the user never has to
+    consider precisely what Tietze transformations to perform, and never has to 
+    worry about using the StzPresentation object or its associated operations.
+    They can start with an fp semigroup and obtain a simplified fp semigroup.
 
     <#Include Label="SimplifyFpSemigroup">
     <#Include Label="SimplifiedFpSemigroup">
