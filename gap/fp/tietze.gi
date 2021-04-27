@@ -13,12 +13,13 @@
 # This file is organised as follows:
 #
 # 1.  Definition of the Semigroup Tietze (IsStzPresentation) object
-# 2.  Internal Tietze transformation functions
-# 3.  User-accessible Tietze transformation functions (wrappers)
-# 4.  Internal helper functions for word/relation manipulation etc.
-# 5.  Internal auto-checkers and appliers for presentation simplifying
-# 6.  SimplifyPresentation etc.
-# 7.  Other
+# 2.  Viewing methods for IsStzPresentation objects
+# 3.  Internal Tietze transformation functions
+# 4.  User-accessible Tietze transformation functions (wrappers)
+# 5.  Internal helper functions for word/relation manipulation etc.
+# 6.  Internal auto-checkers and appliers for presentation simplifying
+# 7.  SimplifyPresentation etc.
+# 8.  Other
 ########################################################################
 
 ########################################################################
@@ -211,6 +212,16 @@ function(stz)
     return out;
 end);
 
+InstallMethod(\<,
+[IsStzPresentation, IsStzPresentation],
+function(stz1, stz2)
+    return Length(stz1) < Length(stz2);
+end);
+
+########################################################################
+# 2. Viewing methods for IsStzPresentation objects
+########################################################################
+
 InstallMethod(ViewString,
 [IsStzPresentation],
 function(stz)
@@ -233,64 +244,63 @@ function(stz)
     return PRINT_STRINGIFY(str);
 end);
 
-InstallMethod(\<,
-[IsStzPresentation, IsStzPresentation],
-function(stz1, stz2)
-    return Length(stz1) < Length(stz2);
-end);
-
-InstallMethod(StzPrintRelation, "for an stz presentation",
-[IsStzPresentation, IsPosInt],
-function(stz, i)
+SEMIGROUPS.StzRelationDisplayString := function(stz, i)
   local rels, f, gens, w1, w2, out;
   rels := RelationsOfStzPresentation(stz);
   if i > Length(rels) then
     return fail;
   else
+    # We'd like patterns to be grouped, i.e. abab=(ab)^2 when displayed. To
+    # do this we sneakily piggyback off display methods for the free semigroup.
     f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
     gens := GeneratorsOfSemigroup(f);
-    w1  := Product(rels[i][1], x -> gens[x]);
-    w2  := Product(rels[i][2], x -> gens[x]);
-    out := Concatenation(PrintString(i),
-                        ". ",
-                        PrintString(w1),
-                        " = ",
-                        PrintString(w2));
+    w1   := Product(rels[i][1], x -> gens[x]);
+    w2   := Product(rels[i][2], x -> gens[x]);
+    out  := Concatenation(PrintString(i),
+                          ". ",
+                          PrintString(w1),
+                          " = ",
+                          PrintString(w2));
     return out;
   fi;
+end;
+
+InstallMethod(StzPrintRelations,
+"For an stz presentation and a list of pos ints",
+[IsStzPresentation, IsList],
+function(stz, list)
+  local i;
+  # This function displays the current relations in terms of the current
+  # generators for a semigroup Tietze presentation.
+  if RelationsOfStzPresentation(stz) = [] then
+    Info(InfoWarning, 1, "There are no relations in the presentation <stz>");
+  fi;
+
+  # Print relations at each index of the list, unless incorrect index,
+  # in which case skip.
+  for i in list do
+    if IsPosInt(i) and i <= Length(RelationsOfStzPresentation(stz)) then
+      Info(InfoWarning, 1, SEMIGROUPS.StzRelationDisplayString(stz, i));
+    fi;
+  od;
 end);
 
 InstallMethod(StzPrintRelations, "For an stz presentation",
 [IsStzPresentation],
 function(stz)
-  local rels, f, gens, w1, w2, out, i;
-  # This function displays the current relations in terms of the current
-  # generators for a semigroup Tietze presentation.
-  # We'd like patterns to be grouped, i.e. abab=(ab)^2 when displayed. To
-  # do this we sneakily piggyback off display methods for the free semigroup.
-  if RelationsOfStzPresentation(stz) = [] then
-    Info(InfoWarning, 1, "There are no relations in the presentation <stz>");
-  fi;
-
-  rels := RelationsOfStzPresentation(stz);
-  f    := FreeSemigroup(GeneratorsOfStzPresentation(stz));
-  gens := GeneratorsOfSemigroup(f);
-
-  for i in [1 .. Length(rels)] do
-    w1  := Product(rels[i][1], x -> gens[x]);
-    w2  := Product(rels[i][2], x -> gens[x]);
-    out := Concatenation(PrintString(i),
-                         ". ",
-                         PrintString(w1),
-                         " = ",
-                         PrintString(w2));
-    Info(InfoWarning, 1, out);
-  od;
+  StzPrintRelations(stz, [1 .. Length(RelationsOfStzPresentation(stz))]);
 end);
 
-InstallMethod(StzPrintGenerators, "For an stz presentation",
-[IsStzPresentation],
-function(stz)
+InstallMethod(StzPrintRelation, "For an stz presentation and a pos int",
+[IsStzPresentation, IsPosInt],
+function(stz, int)
+  StzPrintRelations(stz, [int]);
+end);
+
+InstallMethod(StzPrintGenerators,
+"For an stz presentation and a list of pos ints",
+[IsStzPresentation, IsList],
+function(stz, list)
   local flat, gens, out, rel, i;
   # This function displays a list of generators and number of occurences
   # of each
@@ -309,19 +319,28 @@ function(stz)
 
   # enumerate and count generators
   gens := GeneratorsOfStzPresentation(stz);
-  for i in [1 .. Length(gens)] do
-    out := Concatenation(PrintString(i),
-                         ".  ",
-                         gens[i],
-                         "  ",
-                         PrintString(Number(flat, x -> x = i)),
-                         " occurrences");
-    Info(InfoWarning, 1, out);
+  for i in list do
+    # only print if requested index is valid
+    if IsPosInt(i) and i <= Length(gens) then
+      out := Concatenation(PrintString(i),
+                           ".  ",
+                           gens[i],
+                           "  ",
+                           PrintString(Number(flat, x -> x = i)),
+                           " occurrences");
+      Info(InfoWarning, 1, out);
+    fi;
   od;
 end);
 
+InstallMethod(StzPrintGenerators, "For an stz presentation",
+[IsStzPresentation],
+function(stz)
+  StzPrintGenerators(stz, [1 .. Length(GeneratorsOfStzPresentation(stz))]);
+end);
+
 ########################################################################
-# 2. Internal Tietze transformation functions
+# 3. Internal Tietze transformation functions
 ########################################################################
 
 # TIETZE TRANSFORMATION 1: INTERNAL: ADD REDUNDANT RELATION - NO CHECK
@@ -514,7 +533,7 @@ SEMIGROUPS.TietzeTransformation4 := function(stz, gen)
 end;
 
 ########################################################################
-# 3. User-accessible Tietze transformation functions (wrappers)
+# 4. User-accessible Tietze transformation functions (wrappers)
 ########################################################################
 
 # Tietze Transformation 1: Add relation
@@ -880,7 +899,7 @@ function(stz, genname)
 end);
 
 ########################################################################
-# 4. Internal helper functions for word/relation manipulation etc.
+# 5. Internal helper functions for word/relation manipulation etc.
 ########################################################################
 
 SEMIGROUPS.StzReplaceSubword := function(rels, subword, newWord)
@@ -1031,7 +1050,7 @@ SEMIGROUPS.StzCountRelationSubwords := function(stz, subWord)
 end;
 
 ########################################################################
-# 5.  Internal auto-checkers and appliers for presentation simplifying
+# 6.  Internal auto-checkers and appliers for presentation simplifying
 ########################################################################
 
 ## Format to add a new reduction check:
@@ -1302,7 +1321,7 @@ end;
 SEMIGROUPS.StzTrivialRelationApply := function(stz, args)
   local str;
   str := "<Removing trivial relation: ";
-  Append(str, StzPrintRelation(stz, args.argument));
+  Append(str, SEMIGROUPS.StzRelationDisplayString(stz, args.argument));
   Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
   SEMIGROUPS.TietzeTransformation2(stz, args.argument);
@@ -1311,7 +1330,7 @@ end;
 SEMIGROUPS.StzDuplicateRelsApply := function(stz, args)
   local str;
   str := "<Removing duplicate relation: ";
-  Append(str, StzPrintRelation(stz, args.argument));
+  Append(str, SEMIGROUPS.StzRelationDisplayString(stz, args.argument));
   Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
   SEMIGROUPS.TietzeTransformation2(stz, args.argument);
@@ -1322,7 +1341,7 @@ SEMIGROUPS.StzGensRedundantApply := function(stz, args)
   str := "<Removing redundant generator ";
   Append(str, GeneratorsOfStzPresentation(stz)[args.argument]);
   Append(str, " using relation :");
-  Append(str, StzPrintRelation(stz, args.infoRel));
+  Append(str, SEMIGROUPS.StzRelationDisplayString(stz, args.infoRel));
   Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
   SEMIGROUPS.TietzeTransformation4(stz, args.argument);
@@ -1332,7 +1351,7 @@ SEMIGROUPS.StzRelsSubApply := function(stz, args)
   local str, relIndex, rels, rel, subword, replaceWord, containsRel, newRel, i,
         j;
   str := "<Replacing all instances in other relations of relation: ";
-  Append(str, StzPrintRelation(stz, args.argument));
+  Append(str, SEMIGROUPS.StzRelationDisplayString(stz, args.argument));
   Append(str, ">");
   Info(InfoWarning, 1, PRINT_STRINGIFY(str));
 
@@ -1359,7 +1378,7 @@ SEMIGROUPS.StzRelsSubApply := function(stz, args)
 end;
 
 ########################################################################
-# 6. SimplifyPresentation etc.
+# 7. SimplifyPresentation etc.
 ########################################################################
 
 InstallMethod(StzSimplifyOnce,
@@ -1426,7 +1445,7 @@ function(S)
 end);
 
 ########################################################################
-# 7. Other
+# 8. Other
 ########################################################################
 
 #### TODO
