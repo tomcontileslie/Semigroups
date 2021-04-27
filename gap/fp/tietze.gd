@@ -36,11 +36,12 @@ DeclareAttribute("UnreducedSemigroupOfStzPresentation", IsStzPresentation);
 DeclareAttribute("TietzeForwardMap", IsStzPresentation);
 DeclareAttribute("TietzeBackwardMap", IsStzPresentation);
 
-DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsPosInt, IsList]); # no longer needed?
+DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsPosInt, IsList]);
 DeclareOperation("SetTietzeForwardMap", [IsStzPresentation, IsList]);
 DeclareOperation("SetTietzeBackwardMap", [IsStzPresentation, IsList]);
 
-DeclareOperation("TietzeForwardMapReplaceSubword", [IsStzPresentation, IsList, IsList]);
+DeclareOperation("TietzeForwardMapReplaceSubword",
+[IsStzPresentation, IsList, IsList]);
 
 DeclareOperation("StzSimplifyOnce", [IsStzPresentation]);
 DeclareOperation("StzSimplifyPresentation", [IsStzPresentation]);
@@ -54,10 +55,24 @@ DeclareAttribute("FpTietzeIsomorphism", IsFpSemigroup);
 
 DeclareOperation("TietzeIsomorphism", [IsStzPresentation]);
 
+## Tietze Transformations - various implementations
+# Tietze 1 (add relation)
 DeclareOperation("StzAddRelation", [IsStzPresentation, IsList]);
-DeclareOperation("StzRemoveRelation", [IsStzPresentation, IsPosInt]);
 DeclareOperation("StzAddRelationNC", [IsStzPresentation, IsList]);
+# Tietze 2 (remove relation)
+DeclareOperation("StzRemoveRelation", [IsStzPresentation, IsPosInt]);
 DeclareOperation("StzRemoveRelationNC", [IsStzPresentation, IsPosInt]);
+# Tietze 3 (add generator)
+DeclareOperation("StzAddGenerator", [IsStzPresentation, IsList]);
+DeclareOperation("StzAddGenerator", [IsStzPresentation,
+                                     IsElementOfFpSemigroup]);
+DeclareOperation("StzAddGenerator", [IsStzPresentation, IsList, IsString]);
+DeclareOperation("StzAddGenerator", [IsStzPresentation,
+                                     IsElementOfFpSemigroup,
+                                     IsString]);
+# Tietze 4 (remove generator)
+DeclareOperation("StzRemoveGenerator", [IsStzPresentation, IsPosInt]);
+DeclareOperation("StzRemoveGenerator", [IsStzPresentation, IsString]);
 
 DeclareOperation("StzPrintRelations", [IsStzPresentation]);
 DeclareOperation("StzPrintRelation", [IsStzPresentation, IsPosInt]);
